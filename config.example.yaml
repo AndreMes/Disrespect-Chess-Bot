@@ -1,0 +1,22 @@
+bot:
+  estimated_rating: 2000
+engine:
+  path: "C:/path/to/stockfish.exe"
+  analysis_depth: 12
+  multipv: 4
+logging:
+  directory: logs
+
+# Cada movimento usa UCI. children são respostas alternativas ao lance anterior.
+openings:
+  - name: Bird sample
+    color: white
+    weight: 2
+    max_opponent_rating: 1800
+    enabled: false
+    moves:
+      - uci: f2f4
+        children:
+          - uci: d7d5
+            children:
+              - uci: g1f3

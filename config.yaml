@@ -1,0 +1,130 @@
+bot:
+  estimated_rating: 2000
+engine:
+  path: "tools/stockfish/extracted/stockfish/stockfish-windows-x86-64-universal.exe"
+  analysis_depth: 12
+  multipv: 4
+logging:
+  directory: logs
+
+# Cada movimento usa UCI. children são respostas alternativas ao lance anterior.
+# As linhas desta primeira coleção são propositalmente curtas: elas acabam após
+# o primeiro ou segundo lance excêntrico do bot e então devolvem a posição ao motor.
+openings:
+  # Brancas: cavalos para as bordas.
+  - name: White Knight to a3
+    color: white
+    weight: 1
+    enabled: true
+    moves:
+      - uci: b1a3
+  - name: White Knight to h3
+    color: white
+    weight: 1
+    enabled: true
+    moves:
+      - uci: g1h3
+
+  # Brancas: desenvolve e desfaz o desenvolvimento após uma resposta comum.
+  - name: White Knight c3 back to b1
+    color: white
+    weight: 1
+    enabled: true
+    moves:
+      - uci: b1c3
+        children:
+          - uci: d7d5
+            children:
+              - uci: c3b1
+
+  # Brancas: peões de flanco.
+  - name: White g-pawn thrust
+    color: white
+    weight: 1
+    enabled: true
+    moves:
+      - uci: g2g4
+  - name: White h-pawn thrust
+    color: white
+    weight: 1
+    enabled: true
+    moves:
+      - uci: h2h4
+  - name: White a-pawn thrust
+    color: white
+    weight: 1
+    enabled: true
+    moves:
+      - uci: a2a4
+  - name: White b-pawn thrust
+    color: white
+    weight: 1
+    enabled: true
+    moves:
+      - uci: b2b4
+
+  # Pretas: cavalos para as bordas em resposta a 1.e4.
+  - name: Black Knight to a6 after e4
+    color: black
+    weight: 1
+    enabled: true
+    moves:
+      - uci: e2e4
+        children:
+          - uci: b8a6
+  - name: Black Knight to h6 after e4
+    color: black
+    weight: 1
+    enabled: true
+    moves:
+      - uci: e2e4
+        children:
+          - uci: g8h6
+
+  # Pretas: ...Nf6 seguido de retorno a ...Ng8 após 1.e4 e5.
+  - name: Black Knight f6 back to g8
+    color: black
+    weight: 1
+    enabled: true
+    moves:
+      - uci: e2e4
+        children:
+          - uci: g8f6
+            children:
+              - uci: e4e5
+                children:
+                  - uci: f6g8
+
+  # Pretas: respostas de peão de flanco a 1.e4.
+  - name: Black g-pawn thrust after e4
+    color: black
+    weight: 1
+    enabled: true
+    moves:
+      - uci: e2e4
+        children:
+          - uci: g7g5
+  - name: Black h-pawn thrust after e4
+    color: black
+    weight: 1
+    enabled: true
+    moves:
+      - uci: e2e4
+        children:
+          - uci: h7h5
+  - name: Black a-pawn thrust after e4
+    color: black
+    weight: 1
+    enabled: true
+    moves:
+      - uci: e2e4
+        children:
+          - uci: a7a5
+  - name: Black b-pawn thrust after e4
+    color: black
+    weight: 1
+    enabled: true
+    moves:
+      - uci: e2e4
+        children:
+          - uci: b7b5

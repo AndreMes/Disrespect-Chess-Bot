@@ -1,0 +1,1 @@
+"""Disrespect Bot local MVP."""
