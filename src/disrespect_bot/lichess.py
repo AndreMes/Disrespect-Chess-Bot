@@ -243,8 +243,8 @@ class LichessBot:
         game.headers["White"] = players.get("white", {}).get("name", "White")
         game.headers["Black"] = players.get("black", {}).get("name", "Black")
         game.headers["Result"] = lichess_result(state)
-        pgn_path, json_path = logger.save(game, stem=f"lichess-{game_id}")
-        LOG.info("Saved game log: %s and %s", pgn_path, json_path)
+        pgn_path, json_path, report_path = logger.save(game, stem=f"lichess-{game_id}")
+        LOG.info("Saved game log: %s, %s and %s", pgn_path, json_path, report_path)
 
 
 def main() -> None:

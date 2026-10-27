@@ -50,7 +50,9 @@ python -m disrespect_bot.lichess --config config.yaml
 O modo padrão é seguro: o cliente não inicia nem aceita desafios enquanto essas
 opções não forem ativadas deliberadamente.
 
-O cliente também salva `lichess-<id>.pgn` e `lichess-<id>.json` em `logs/`.
+O cliente também salva `lichess-<id>.pgn`, `lichess-<id>.json` e
+`lichess-<id>.report.md` em `logs/`. O relatório Markdown resume resultado,
+sacrifícios, subpromoções, pressão de relógio e a pausa provocativa antes do mate.
 O JSON registra a origem de cada lance, a avaliação, o nível de desrespeito e o
 orçamento de análise calculado a partir do relógio. Em bullet, essa gestão de
 tempo limita o Stockfish para preservar uma reserva destinada à rede e ao envio
