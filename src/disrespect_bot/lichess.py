@@ -18,6 +18,18 @@ from .openings import OpeningManager
 LOG = logging.getLogger(__name__)
 
 
+def retry_delay(error: requests.RequestException, fallback_seconds: int) -> int:
+    """Lichess asks clients to wait a full minute after HTTP 429."""
+    if isinstance(error, requests.HTTPError) and error.response is not None:
+        if error.response.status_code == 429:
+            retry_after = error.response.headers.get("Retry-After")
+            try:
+                return max(60, int(retry_after)) if retry_after else 60
+            except ValueError:
+                return 60
+    return fallback_seconds
+
+
 class LichessApi:
     """Small wrapper for the official Bot API; no browser automation is used."""
 
@@ -99,8 +111,7 @@ class LichessBot:
                         finally:
                             self.active_games -= 1
             except requests.RequestException as error:
-                status = error.response.status_code if isinstance(error, requests.HTTPError) and error.response else None
-                delay = 60 if status == 429 else retry_seconds
+                delay = retry_delay(error, retry_seconds)
                 LOG.warning("Lichess stream disconnected (%s); retrying in %ss", error, delay)
                 time.sleep(delay)
                 retry_seconds = min(retry_seconds * 2, 60)

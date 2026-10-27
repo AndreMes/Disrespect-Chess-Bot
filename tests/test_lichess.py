@@ -1,5 +1,7 @@
+import requests
+
 from disrespect_bot.config import LichessConfig
-from disrespect_bot.lichess import challenge_is_allowed
+from disrespect_bot.lichess import challenge_is_allowed, retry_delay
 
 
 CONFIG = LichessConfig(enabled=True, accept_challenges=True, allowed_challengers=("andre",), allowed_variants=("standard",), allowed_speeds=("rapid",), max_concurrent_games=1)
@@ -15,3 +17,10 @@ def test_accepts_only_authorized_standard_challenge():
     assert not challenge_is_allowed(challenge(variant="chess960"), CONFIG, active_games=0)
     assert not challenge_is_allowed(challenge(speed="correspondence"), CONFIG, active_games=0)
     assert not challenge_is_allowed(challenge(), CONFIG, active_games=1)
+
+
+def test_429_waits_at_least_one_minute():
+    response = requests.Response()
+    response.status_code = 429
+    error = requests.HTTPError(response=response)
+    assert retry_delay(error, 1) == 60
