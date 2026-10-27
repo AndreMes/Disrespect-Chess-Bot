@@ -23,7 +23,7 @@ def main() -> None:
     if errors := manager.validate():
         raise ValueError("Invalid opening configuration:\n- " + "\n- ".join(errors))
     choice, opening_attempted, node, logger = None, False, game, GameLogger(config.log_directory)
-    selector = DisrespectEngine(config.safety, config.underpromotion, config.early_sacrifice, config.disrespect, config.estimated_rating)
+    selector = DisrespectEngine(config.safety, config.underpromotion, config.early_sacrifice, config.disrespect, config.estimated_rating, config.winning_underpromotion)
     with StockfishAnalyzer(config.engine.path) as engine:
         while not board.is_game_over(claim_draw=True):
             if board.turn == bot_color and not opening_attempted:

@@ -29,6 +29,15 @@ class UnderpromotionConfig:
 
 
 @dataclass(frozen=True)
+class WinningUnderpromotionConfig:
+    enabled: bool = True
+    complete_all_pawn_promotions: bool = True
+    minimum_best_evaluation: int = 500
+    max_opponent_material: int = 5
+    minimum_candidate_evaluation: int = 100
+
+
+@dataclass(frozen=True)
 class EarlySacrificeConfig:
     enabled: bool = True
     max_ply: int = 14
@@ -63,6 +72,7 @@ class AppConfig:
     engine: EngineConfig
     safety: SafetyConfig
     underpromotion: UnderpromotionConfig
+    winning_underpromotion: WinningUnderpromotionConfig
     early_sacrifice: EarlySacrificeConfig
     disrespect: DisrespectConfig
     lichess: LichessConfig
@@ -77,6 +87,7 @@ def load_config(path: str | Path) -> AppConfig:
     engine_raw = raw.get("engine", {})
     safety_raw = raw.get("safety", {})
     underpromotion_raw = raw.get("behaviors", {}).get("underpromotion", {})
+    winning_underpromotion_raw = raw.get("behaviors", {}).get("winning_underpromotion", {})
     early_sacrifice_raw = raw.get("behaviors", {}).get("early_sacrifice", {})
     disrespect_raw = raw.get("disrespect", {})
     lichess_raw = raw.get("lichess", {})
@@ -95,6 +106,13 @@ def load_config(path: str | Path) -> AppConfig:
             required_when_safe=bool(underpromotion_raw.get("required_when_safe", True)),
             max_centipawn_loss=int(underpromotion_raw.get("max_centipawn_loss", 50)),
             priority=tuple(underpromotion_raw.get("priority", ["knight", "bishop", "rook"])),
+        ),
+        winning_underpromotion=WinningUnderpromotionConfig(
+            enabled=bool(winning_underpromotion_raw.get("enabled", True)),
+            complete_all_pawn_promotions=bool(winning_underpromotion_raw.get("complete_all_pawn_promotions", True)),
+            minimum_best_evaluation=int(winning_underpromotion_raw.get("minimum_best_evaluation", 500)),
+            max_opponent_material=int(winning_underpromotion_raw.get("max_opponent_material", 5)),
+            minimum_candidate_evaluation=int(winning_underpromotion_raw.get("minimum_candidate_evaluation", 100)),
         ),
         early_sacrifice=EarlySacrificeConfig(
             enabled=bool(early_sacrifice_raw.get("enabled", True)),

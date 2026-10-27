@@ -95,3 +95,25 @@ def test_rating_advantage_increases_disrespect_to_queen_for_piece_margin():
     # 500 points ahead yields level 65 and a tolerance of 750 centipawns.
     assert engine.disrespect_level(2400, 1900) == 65
     assert engine._interpolate(100, 1100, 65) == 750
+
+
+def test_winning_endgame_advances_pawns_before_forced_mate():
+    board = chess.Board("7k/8/P7/8/8/8/8/K7 w - - 0 1")
+    mate_move = chess.Move.from_uci("a1b1")
+    pawn_push = chess.Move.from_uci("a6a7")
+    analyzer = BestMoveFakeAnalyzer({
+        mate_move: Candidate(mate_move, 99_997, 3, (1000, 0, 0)),
+        pawn_push: candidate(pawn_push, 200),
+    }, mate_move)
+    engine = DisrespectEngine(SafetyConfig(confirmation_depth=10), UnderpromotionConfig(False))
+    decision = engine.choose_move(board, analyzer, 8, 3)
+    assert decision.move == pawn_push
+    assert decision.event == "pawn_first_endgame"
+
+
+def test_winning_endgame_underpromotes_even_when_queen_has_forced_mate():
+    best = Candidate(QUEEN, 99_997, 3, (1000, 0, 0))
+    analyzer = FakeAnalyzer({QUEEN: best, KNIGHT: candidate(KNIGHT, 200), BISHOP: candidate(BISHOP, 250), ROOK: candidate(ROOK, 300)})
+    engine = DisrespectEngine(SafetyConfig(confirmation_depth=10), UnderpromotionConfig(True, True, 50, ("knight", "bishop", "rook")))
+    decision = engine.choose_move(BOARD, analyzer, 8, 3)
+    assert decision.move == KNIGHT

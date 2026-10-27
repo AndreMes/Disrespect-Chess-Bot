@@ -5,7 +5,7 @@ from typing import Protocol
 
 import chess
 
-from .config import DisrespectConfig, EarlySacrificeConfig, SafetyConfig, UnderpromotionConfig
+from .config import DisrespectConfig, EarlySacrificeConfig, SafetyConfig, UnderpromotionConfig, WinningUnderpromotionConfig
 from .engine import Candidate
 
 
@@ -33,12 +33,13 @@ class DisrespectEngine:
     }
     _piece_values = {chess.KNIGHT: 3, chess.BISHOP: 3, chess.ROOK: 5, chess.QUEEN: 9}
 
-    def __init__(self, safety: SafetyConfig, underpromotion: UnderpromotionConfig, early_sacrifice: EarlySacrificeConfig | None = None, disrespect: DisrespectConfig | None = None, estimated_bot_rating: int = 2000):
+    def __init__(self, safety: SafetyConfig, underpromotion: UnderpromotionConfig, early_sacrifice: EarlySacrificeConfig | None = None, disrespect: DisrespectConfig | None = None, estimated_bot_rating: int = 2000, winning_underpromotion: WinningUnderpromotionConfig | None = None):
         self.safety = safety
         self.underpromotion = underpromotion
         self.early_sacrifice = early_sacrifice or EarlySacrificeConfig()
         self.disrespect = disrespect or DisrespectConfig()
         self.estimated_bot_rating = estimated_bot_rating
+        self.winning_underpromotion = winning_underpromotion or WinningUnderpromotionConfig()
 
     def choose_move(self, board: chess.Board, analyzer: Analyzer, depth: int, multipv: int, bot_rating: int | None = None, opponent_rating: int | None = None) -> Decision:
         candidates = analyzer.candidates(board, depth, multipv)
@@ -49,6 +50,9 @@ class DisrespectEngine:
             underpromotion = self._choose_underpromotion(board, analyzer, best)
             if underpromotion is not None:
                 return Decision(underpromotion.move, "underpromotion", best, underpromotion, "underpromotion")
+        pawn_push = self._choose_pawn_first_move(board, analyzer, best)
+        if pawn_push is not None:
+            return Decision(pawn_push.move, "pawn_first_endgame", best, pawn_push, "pawn_first_endgame")
         level = self.disrespect_level(bot_rating, opponent_rating)
         sacrifice = self._choose_early_sacrifice(board, analyzer, best, level)
         if sacrifice is not None:
@@ -101,20 +105,60 @@ class DisrespectEngine:
             if move is None:
                 continue
             candidate = analyzer.analyse_move(board, move, self.safety.confirmation_depth)
-            if self._safe_underpromotion(best, candidate):
+            if self._safe_underpromotion(board, best, candidate):
                 return candidate
         return None
 
-    def _safe_underpromotion(self, best: Candidate, candidate: Candidate) -> bool:
+    def _safe_underpromotion(self, board: chess.Board, best: Candidate, candidate: Candidate) -> bool:
         if candidate.mate_in is not None and candidate.mate_in < 0:
             return False
         if best.mate_in is not None:
-            return best.mate_in > 0 and candidate.mate_in is not None and candidate.mate_in > 0
+            if best.mate_in <= 0:
+                return False
+            if candidate.mate_in is not None and candidate.mate_in > 0:
+                return True
+            return self._is_clearly_won_endgame(board, best) and candidate.centipawns >= self.winning_underpromotion.minimum_candidate_evaluation
+        if self._is_clearly_won_endgame(board, best):
+            return candidate.centipawns >= self.winning_underpromotion.minimum_candidate_evaluation
         floor = max(
             self.safety.minimum_evaluation_centipawns,
             best.centipawns - min(self.safety.max_centipawn_loss, self.underpromotion.max_centipawn_loss),
         )
         return candidate.centipawns >= floor
+
+    def _is_clearly_won_endgame(self, board: chess.Board, best: Candidate) -> bool:
+        config = self.winning_underpromotion
+        if not config.enabled or best.centipawns < config.minimum_best_evaluation:
+            return False
+        opponent = not board.turn
+        material = sum(
+            len(board.pieces(piece, opponent)) * value
+            for piece, value in self._piece_values.items()
+        ) + len(board.pieces(chess.PAWN, opponent))
+        return material <= config.max_opponent_material
+
+    def _choose_pawn_first_move(self, board: chess.Board, analyzer: Analyzer, best: Candidate) -> Candidate | None:
+        config = self.winning_underpromotion
+        if not config.complete_all_pawn_promotions or not self._is_clearly_won_endgame(board, best):
+            return None
+        pawns = [
+            move for move in board.legal_moves
+            if board.piece_at(move.from_square) and board.piece_at(move.from_square).piece_type == chess.PAWN and not move.promotion
+        ]
+        if not pawns:
+            return None
+        advancing = sorted(
+            pawns,
+            key=lambda move: chess.square_rank(move.to_square) if board.turn == chess.WHITE else 7 - chess.square_rank(move.to_square),
+            reverse=True,
+        )
+        for move in advancing:
+            candidate = analyzer.analyse_move(board, move, self.safety.confirmation_depth)
+            if candidate.mate_in is not None and candidate.mate_in < 0:
+                continue
+            if candidate.centipawns >= config.minimum_candidate_evaluation:
+                return candidate
+        return None
 
     @staticmethod
     def _interpolate(low: int, high: int, level: int) -> int:

@@ -14,6 +14,12 @@ behaviors:
     required_when_safe: true
     max_centipawn_loss: 50
     priority: [knight, bishop, rook]
+  winning_underpromotion:
+    enabled: true
+    complete_all_pawn_promotions: true
+    minimum_best_evaluation: 500
+    max_opponent_material: 5
+    minimum_candidate_evaluation: 100
   early_sacrifice:
     enabled: true
     max_ply: 14
