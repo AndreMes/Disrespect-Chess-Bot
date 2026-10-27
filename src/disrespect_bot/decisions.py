@@ -5,7 +5,7 @@ from typing import Protocol
 
 import chess
 
-from .config import DisrespectConfig, EarlySacrificeConfig, MateDelayConfig, SafetyConfig, UnderpromotionConfig, WinningUnderpromotionConfig
+from .config import ClockPressureConfig, DisrespectConfig, EarlySacrificeConfig, MateDelayConfig, SafetyConfig, UnderpromotionConfig, WinningUnderpromotionConfig
 from .engine import Candidate
 
 
@@ -33,7 +33,7 @@ class DisrespectEngine:
     }
     _piece_values = {chess.KNIGHT: 3, chess.BISHOP: 3, chess.ROOK: 5, chess.QUEEN: 9}
 
-    def __init__(self, safety: SafetyConfig, underpromotion: UnderpromotionConfig, early_sacrifice: EarlySacrificeConfig | None = None, disrespect: DisrespectConfig | None = None, estimated_bot_rating: int = 2000, winning_underpromotion: WinningUnderpromotionConfig | None = None, mate_delay: MateDelayConfig | None = None):
+    def __init__(self, safety: SafetyConfig, underpromotion: UnderpromotionConfig, early_sacrifice: EarlySacrificeConfig | None = None, disrespect: DisrespectConfig | None = None, estimated_bot_rating: int = 2000, winning_underpromotion: WinningUnderpromotionConfig | None = None, mate_delay: MateDelayConfig | None = None, clock_pressure: ClockPressureConfig | None = None):
         self.safety = safety
         self.underpromotion = underpromotion
         self.early_sacrifice = early_sacrifice or EarlySacrificeConfig()
@@ -41,13 +41,14 @@ class DisrespectEngine:
         self.estimated_bot_rating = estimated_bot_rating
         self.winning_underpromotion = winning_underpromotion or WinningUnderpromotionConfig()
         self.mate_delay = mate_delay or MateDelayConfig()
+        self.clock_pressure = clock_pressure or ClockPressureConfig()
 
-    def choose_move(self, board: chess.Board, analyzer: Analyzer, depth: int, multipv: int, bot_rating: int | None = None, opponent_rating: int | None = None) -> Decision:
+    def choose_move(self, board: chess.Board, analyzer: Analyzer, depth: int, multipv: int, bot_rating: int | None = None, opponent_rating: int | None = None, opponent_clock_ms: int | None = None) -> Decision:
         candidates = analyzer.candidates(board, depth, multipv)
         if not candidates:
             raise RuntimeError("Engine returned no legal candidate")
         best = candidates[0]
-        level = self.disrespect_level(bot_rating, opponent_rating)
+        level = self.effective_disrespect_level(bot_rating, opponent_rating, opponent_clock_ms)
         if self.underpromotion.enabled:
             underpromotion = self._choose_underpromotion(board, analyzer, best)
             if underpromotion is not None:
@@ -58,9 +59,10 @@ class DisrespectEngine:
         delayed_mate = self._choose_mate_delay_pawn_move(board, analyzer, best, level)
         if delayed_mate is not None:
             return Decision(delayed_mate.move, "mate_delay", best, delayed_mate, "mate_delayed_for_pawn_promotion")
-        sacrifice = self._choose_early_sacrifice(board, analyzer, best, level)
+        sacrifice = self._choose_early_sacrifice(board, analyzer, best, level, opponent_clock_ms)
         if sacrifice is not None:
-            return Decision(sacrifice.move, "early_sacrifice", best, sacrifice, "material_sacrifice")
+            event = "clock_pressure_sacrifice" if self.clock_pressure_bonus(opponent_clock_ms) else "material_sacrifice"
+            return Decision(sacrifice.move, "early_sacrifice", best, sacrifice, event)
         return Decision(best.move, "stockfish", best, best)
 
     def disrespect_level(self, bot_rating: int | None, opponent_rating: int | None) -> int:
@@ -69,9 +71,27 @@ class DisrespectEngine:
         advantage = max(0, (bot_rating or self.estimated_bot_rating) - opponent_rating)
         return min(self.disrespect.maximum_level, self.disrespect.base_level + advantage // self.disrespect.rating_points_per_level)
 
-    def _choose_early_sacrifice(self, board: chess.Board, analyzer: Analyzer, initial_best: Candidate, level: int) -> Candidate | None:
+    def clock_pressure_bonus(self, opponent_clock_ms: int | None) -> int:
+        config = self.clock_pressure
+        if not config.enabled or opponent_clock_ms is None:
+            return 0
+        seconds = opponent_clock_ms / 1000
+        if seconds >= config.trigger_seconds:
+            return 0
+        if seconds <= config.critical_seconds:
+            return config.maximum_bonus_level
+        span = config.trigger_seconds - config.critical_seconds
+        if span <= 0:
+            return config.maximum_bonus_level
+        return round(config.maximum_bonus_level * (config.trigger_seconds - seconds) / span)
+
+    def effective_disrespect_level(self, bot_rating: int | None, opponent_rating: int | None, opponent_clock_ms: int | None) -> int:
+        return min(self.disrespect.maximum_level, self.disrespect_level(bot_rating, opponent_rating) + self.clock_pressure_bonus(opponent_clock_ms))
+
+    def _choose_early_sacrifice(self, board: chess.Board, analyzer: Analyzer, initial_best: Candidate, level: int, opponent_clock_ms: int | None) -> Candidate | None:
         config = self.early_sacrifice
-        if not config.enabled or board.ply() >= config.max_ply:
+        max_ply = self.clock_pressure.expanded_sacrifice_max_ply if self.clock_pressure_bonus(opponent_clock_ms) else config.max_ply
+        if not config.enabled or board.ply() >= max_ply:
             return None
         candidate_count = self._interpolate(config.min_candidates, config.max_candidates, level)
         offered = self._offered_piece_moves(board)[:candidate_count]

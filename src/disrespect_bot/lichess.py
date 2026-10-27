@@ -160,7 +160,7 @@ class LichessBot:
         board = chess.Board()
         logger = GameLogger(self.config.log_directory)
         opening_manager = OpeningManager(self.config.openings)
-        selector = DisrespectEngine(self.config.safety, self.config.underpromotion, self.config.early_sacrifice, self.config.disrespect, self.config.estimated_rating, self.config.winning_underpromotion, self.config.mate_delay)
+        selector = DisrespectEngine(self.config.safety, self.config.underpromotion, self.config.early_sacrifice, self.config.disrespect, self.config.estimated_rating, self.config.winning_underpromotion, self.config.mate_delay, self.config.clock_pressure)
         bot_color: chess.Color | None = None
         opening = None
         opening_attempted = False
@@ -195,26 +195,28 @@ class LichessBot:
                 move = opening_manager.next_move(board, opening, bot_color) if opening else None
                 clock_ms = state.get("wtime") if bot_color == chess.WHITE else state.get("btime")
                 increment_ms = state.get("winc") if bot_color == chess.WHITE else state.get("binc")
+                opponent_clock_ms = state.get("btime") if bot_color == chess.WHITE else state.get("wtime")
                 if move:
                     source, detail = "opening", {"source": "opening"}
                 else:
                     budget = move_time_budget_seconds(clock_ms, increment_ms, self.config.time_management)
                     engine.set_move_time_budget(budget)
                     try:
-                        decision = selector.choose_move(board, engine, self.config.engine.analysis_depth, self.config.engine.multipv, bot_rating, opponent_rating)
+                        decision = selector.choose_move(board, engine, self.config.engine.analysis_depth, self.config.engine.multipv, bot_rating, opponent_rating, opponent_clock_ms)
                     finally:
                         engine.clear_move_time_budget()
                     move, source = decision.move, decision.source
                     detail = {"source": source, "best_centipawns": decision.best.centipawns, "chosen_centipawns": decision.chosen.centipawns, "best_wdl": decision.best.wdl}
                     if decision.event:
                         detail["event"] = decision.event
-                    detail["disrespect_level"] = selector.disrespect_level(bot_rating, opponent_rating)
+                    detail["disrespect_level"] = selector.effective_disrespect_level(bot_rating, opponent_rating, opponent_clock_ms)
+                    detail["clock_pressure_bonus"] = selector.clock_pressure_bonus(opponent_clock_ms)
                     detail["engine_budget_ms"] = None if budget is None else round(budget * 1000)
                 taunt_delay = mate_clock_taunt_delay_seconds(
                     board,
                     move,
                     clock_ms,
-                    selector.disrespect_level(bot_rating, opponent_rating),
+                    selector.effective_disrespect_level(bot_rating, opponent_rating, opponent_clock_ms),
                     self.config.mate_clock_taunt,
                 )
                 if taunt_delay:
@@ -222,6 +224,7 @@ class LichessBot:
                     time.sleep(taunt_delay)
                     detail["mate_clock_taunt_wait_ms"] = round(taunt_delay * 1000)
                 detail["clock_ms"] = clock_ms
+                detail["opponent_clock_ms"] = opponent_clock_ms
                 detail["increment_ms"] = increment_ms
                 detail["uci"] = move.uci()
                 logger.event(ply=board.ply(), fen=board.fen(), kind="move", detail=detail)

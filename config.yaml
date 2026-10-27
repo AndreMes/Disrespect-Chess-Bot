@@ -45,6 +45,15 @@ behaviors:
     target_remaining_seconds: 1.0
     # Folga para a rede e para a requisição chegar ao Lichess.
     network_margin_seconds: 0.25
+  clock_pressure:
+    enabled: true
+    # A agressividade cresce quando o adversário entra neste intervalo de tempo.
+    trigger_seconds: 20.0
+    critical_seconds: 5.0
+    # Em 5 s ou menos, soma até 85 níveis de desrespeito.
+    maximum_bonus_level: 85
+    # Sob pressão, permite ofertas de material até o 15º lance do bot.
+    expanded_sacrifice_max_ply: 30
   early_sacrifice:
     enabled: true
     # Só procura ofertas de material até o início do sétimo lance do bot.

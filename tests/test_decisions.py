@@ -1,6 +1,7 @@
 import chess
 
 from disrespect_bot.config import (
+    ClockPressureConfig,
     DisrespectConfig,
     EarlySacrificeConfig,
     MateDelayConfig,
@@ -155,3 +156,22 @@ def test_winning_endgame_avoids_increasing_immediate_pawn_captures():
     after = board.copy(stack=False)
     after.push_uci("a6a7")
     assert engine._opponent_pawn_capture_threats(after) == 0
+
+
+def test_low_opponent_clock_extends_the_sacrifice_window():
+    board = chess.Board("4k3/8/4p3/8/2B5/8/8/4K3 w - - 0 9")
+    best_move = chess.Move.from_uci("c4b5")
+    sacrifice = chess.Move.from_uci("c4d5")
+    analyzer = BestMoveFakeAnalyzer({best_move: candidate(best_move, 100), sacrifice: candidate(sacrifice, -100)}, best_move)
+    engine = DisrespectEngine(
+        SafetyConfig(confirmation_depth=10),
+        UnderpromotionConfig(False),
+        clock_pressure=ClockPressureConfig(True, 20, 5, 85, 30),
+    )
+
+    assert board.ply() == 16
+    assert engine.choose_move(board, analyzer, 8, 3).move == best_move
+    decision = engine.choose_move(board, analyzer, 8, 3, opponent_clock_ms=5_000)
+    assert decision.move == sacrifice
+    assert decision.event == "clock_pressure_sacrifice"
+    assert engine.effective_disrespect_level(None, None, 5_000) == 100

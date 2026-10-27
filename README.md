@@ -55,3 +55,8 @@ O JSON registra a origem de cada lance, a avaliação, o nível de desrespeito e
 orçamento de análise calculado a partir do relógio. Em bullet, essa gestão de
 tempo limita o Stockfish para preservar uma reserva destinada à rede e ao envio
 do lance.
+
+Quando o relógio do adversário cai abaixo de 20 segundos, o bot aumenta
+progressivamente o desrespeito; aos 5 segundos, a pressão chega ao máximo e a
+janela de sacrifícios pode se estender até o 15º lance do bot. Esses limites
+ficam em `behaviors.clock_pressure` no `config.yaml`.

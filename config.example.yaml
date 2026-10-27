@@ -31,6 +31,12 @@ behaviors:
     minimum_disrespect_level: 45
     target_remaining_seconds: 1.0
     network_margin_seconds: 0.25
+  clock_pressure:
+    enabled: true
+    trigger_seconds: 20.0
+    critical_seconds: 5.0
+    maximum_bonus_level: 85
+    expanded_sacrifice_max_ply: 30
   early_sacrifice:
     enabled: true
     max_ply: 14

@@ -68,6 +68,15 @@ class DisrespectConfig:
 
 
 @dataclass(frozen=True)
+class ClockPressureConfig:
+    enabled: bool = True
+    trigger_seconds: float = 20.0
+    critical_seconds: float = 5.0
+    maximum_bonus_level: int = 85
+    expanded_sacrifice_max_ply: int = 30
+
+
+@dataclass(frozen=True)
 class LichessConfig:
     enabled: bool = False
     base_url: str = "https://lichess.org"
@@ -87,6 +96,7 @@ class AppConfig:
     mate_delay: MateDelayConfig
     early_sacrifice: EarlySacrificeConfig
     disrespect: DisrespectConfig
+    clock_pressure: ClockPressureConfig
     time_management: TimeManagementConfig
     mate_clock_taunt: MateClockTauntConfig
     lichess: LichessConfig
@@ -105,6 +115,7 @@ def load_config(path: str | Path) -> AppConfig:
     mate_delay_raw = raw.get("behaviors", {}).get("mate_delay", {})
     early_sacrifice_raw = raw.get("behaviors", {}).get("early_sacrifice", {})
     disrespect_raw = raw.get("disrespect", {})
+    clock_pressure_raw = raw.get("behaviors", {}).get("clock_pressure", {})
     time_management_raw = raw.get("time_management", {})
     mate_clock_taunt_raw = raw.get("behaviors", {}).get("mate_clock_taunt", {})
     lichess_raw = raw.get("lichess", {})
@@ -152,6 +163,13 @@ def load_config(path: str | Path) -> AppConfig:
             base_level=int(disrespect_raw.get("base_level", 15)),
             rating_points_per_level=int(disrespect_raw.get("rating_points_per_level", 10)),
             maximum_level=int(disrespect_raw.get("maximum_level", 100)),
+        ),
+        clock_pressure=ClockPressureConfig(
+            enabled=bool(clock_pressure_raw.get("enabled", True)),
+            trigger_seconds=float(clock_pressure_raw.get("trigger_seconds", 20.0)),
+            critical_seconds=float(clock_pressure_raw.get("critical_seconds", 5.0)),
+            maximum_bonus_level=int(clock_pressure_raw.get("maximum_bonus_level", 85)),
+            expanded_sacrifice_max_ply=int(clock_pressure_raw.get("expanded_sacrifice_max_ply", 30)),
         ),
         time_management=TimeManagementConfig(
             enabled=bool(time_management_raw.get("enabled", True)),
