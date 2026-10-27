@@ -4,6 +4,7 @@ import argparse
 import chess
 import chess.pgn
 from .config import load_config
+from .decisions import DisrespectEngine
 from .engine import StockfishAnalyzer
 from .logging import GameLogger
 from .openings import OpeningManager
@@ -22,12 +23,28 @@ def main() -> None:
     if errors := manager.validate():
         raise ValueError("Invalid opening configuration:\n- " + "\n- ".join(errors))
     choice, node, logger = manager.choose(bot_color, args.opponent_rating), game, GameLogger(config.log_directory)
+    selector = DisrespectEngine(config.safety, config.underpromotion)
     with StockfishAnalyzer(config.engine.path) as engine:
         while not board.is_game_over(claim_draw=True):
             move, source = (manager.next_move(board, choice, bot_color), "opening") if board.turn == bot_color and choice else (None, "stockfish")
+            detail = {"source": source}
             if move is None:
-                move, source = engine.best_move(board, depth), "stockfish"
-            logger.event(ply=board.ply(), fen=board.fen(), kind="move", detail={"uci": move.uci(), "source": source})
+                if board.turn == bot_color:
+                    decision = selector.choose_move(board, engine, depth, config.engine.multipv)
+                    move, source = decision.move, decision.source
+                    detail = {
+                        "source": source,
+                        "best_centipawns": decision.best.centipawns,
+                        "chosen_centipawns": decision.chosen.centipawns,
+                        "best_wdl": decision.best.wdl,
+                    }
+                    if decision.event:
+                        detail["event"] = decision.event
+                else:
+                    move, source = engine.best_move(board, depth), "stockfish"
+                    detail = {"source": source}
+            detail["uci"] = move.uci()
+            logger.event(ply=board.ply(), fen=board.fen(), kind="move", detail=detail)
             board.push(move)
             node = node.add_variation(move)
     outcome = board.outcome(claim_draw=True)

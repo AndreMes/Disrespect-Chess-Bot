@@ -4,6 +4,15 @@ engine:
   path: "C:/path/to/stockfish.exe"
   analysis_depth: 12
   multipv: 4
+safety:
+  max_centipawn_loss: 80
+  minimum_evaluation_centipawns: -30
+  confirmation_depth: 16
+behaviors:
+  underpromotion:
+    enabled: true
+    max_centipawn_loss: 50
+    priority: [knight, bishop, rook]
 logging:
   directory: logs
 

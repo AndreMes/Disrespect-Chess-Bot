@@ -4,6 +4,19 @@ engine:
   path: "tools/stockfish/extracted/stockfish/stockfish-windows-x86-64-universal.exe"
   analysis_depth: 12
   multipv: 4
+safety:
+  # Um comportamento especial nunca pode perder mais que esta margem do melhor lance.
+  max_centipawn_loss: 80
+  # Também não aceite voluntariamente uma posição que o motor considere inferior.
+  minimum_evaluation_centipawns: -30
+  # Confirma comparações de risco com uma análise mais profunda.
+  confirmation_depth: 16
+behaviors:
+  underpromotion:
+    enabled: true
+    max_centipawn_loss: 50
+    # A primeira promoção segura encontrada nesta ordem é escolhida.
+    priority: [knight, bishop, rook]
 logging:
   directory: logs
 
