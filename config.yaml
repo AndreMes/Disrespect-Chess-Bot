@@ -17,6 +17,14 @@ behaviors:
     max_centipawn_loss: 50
     # A primeira promoção segura encontrada nesta ordem é escolhida.
     priority: [knight, bishop, rook]
+  early_sacrifice:
+    enabled: true
+    # Só procura ofertas de material até o início do sétimo lance do bot.
+    max_ply: 14
+    max_candidates: 8
+    # Mais permissivo que a segurança normal, mas ainda recusa posição claramente perdida.
+    max_centipawn_loss: 350
+    minimum_evaluation_centipawns: -200
 lichess:
   # Permanece desligado até você criar uma conta BOT e fornecer o token pelo ambiente.
   enabled: true

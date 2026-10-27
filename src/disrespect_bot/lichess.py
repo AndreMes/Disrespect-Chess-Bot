@@ -147,7 +147,7 @@ class LichessBot:
         board = chess.Board()
         logger = GameLogger(self.config.log_directory)
         opening_manager = OpeningManager(self.config.openings)
-        selector = DisrespectEngine(self.config.safety, self.config.underpromotion)
+        selector = DisrespectEngine(self.config.safety, self.config.underpromotion, self.config.early_sacrifice)
         bot_color: chess.Color | None = None
         opening = None
         opening_attempted = False

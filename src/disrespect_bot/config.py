@@ -28,6 +28,15 @@ class UnderpromotionConfig:
 
 
 @dataclass(frozen=True)
+class EarlySacrificeConfig:
+    enabled: bool = True
+    max_ply: int = 14
+    max_candidates: int = 8
+    max_centipawn_loss: int = 350
+    minimum_evaluation_centipawns: int = -200
+
+
+@dataclass(frozen=True)
 class LichessConfig:
     enabled: bool = False
     base_url: str = "https://lichess.org"
@@ -43,6 +52,7 @@ class AppConfig:
     engine: EngineConfig
     safety: SafetyConfig
     underpromotion: UnderpromotionConfig
+    early_sacrifice: EarlySacrificeConfig
     lichess: LichessConfig
     openings: list[dict]
     log_directory: Path
@@ -55,6 +65,7 @@ def load_config(path: str | Path) -> AppConfig:
     engine_raw = raw.get("engine", {})
     safety_raw = raw.get("safety", {})
     underpromotion_raw = raw.get("behaviors", {}).get("underpromotion", {})
+    early_sacrifice_raw = raw.get("behaviors", {}).get("early_sacrifice", {})
     lichess_raw = raw.get("lichess", {})
     engine_path = os.getenv("STOCKFISH_PATH", engine_raw.get("path", ""))
     if not engine_path:
@@ -70,6 +81,13 @@ def load_config(path: str | Path) -> AppConfig:
             enabled=bool(underpromotion_raw.get("enabled", True)),
             max_centipawn_loss=int(underpromotion_raw.get("max_centipawn_loss", 50)),
             priority=tuple(underpromotion_raw.get("priority", ["knight", "bishop", "rook"])),
+        ),
+        early_sacrifice=EarlySacrificeConfig(
+            enabled=bool(early_sacrifice_raw.get("enabled", True)),
+            max_ply=int(early_sacrifice_raw.get("max_ply", 14)),
+            max_candidates=int(early_sacrifice_raw.get("max_candidates", 8)),
+            max_centipawn_loss=int(early_sacrifice_raw.get("max_centipawn_loss", 350)),
+            minimum_evaluation_centipawns=int(early_sacrifice_raw.get("minimum_evaluation_centipawns", -200)),
         ),
         lichess=LichessConfig(
             enabled=bool(lichess_raw.get("enabled", False)),

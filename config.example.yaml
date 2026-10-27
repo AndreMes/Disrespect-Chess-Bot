@@ -13,6 +13,12 @@ behaviors:
     enabled: true
     max_centipawn_loss: 50
     priority: [knight, bishop, rook]
+  early_sacrifice:
+    enabled: true
+    max_ply: 14
+    max_candidates: 8
+    max_centipawn_loss: 350
+    minimum_evaluation_centipawns: -200
 lichess:
   enabled: false
   accept_challenges: false
