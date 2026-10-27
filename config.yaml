@@ -47,8 +47,8 @@ behaviors:
     network_margin_seconds: 0.25
   early_sacrifice:
     enabled: true
-    # Procura ofertas de material até o início do décimo quinto lance do bot.
-    max_ply: 30
+    # Procura ofertas de material até o início do décimo lance do bot.
+    max_ply: 20
     min_candidates: 2
     max_candidates: 16
     # Com vantagem de rating de ~325 pontos, atinge o desrespeito máximo.
