@@ -11,6 +11,7 @@ safety:
 behaviors:
   underpromotion:
     enabled: true
+    required_when_safe: true
     max_centipawn_loss: 50
     priority: [knight, bishop, rook]
   early_sacrifice:

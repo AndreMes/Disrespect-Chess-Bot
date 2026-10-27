@@ -23,6 +23,7 @@ class SafetyConfig:
 @dataclass(frozen=True)
 class UnderpromotionConfig:
     enabled: bool = True
+    required_when_safe: bool = True
     max_centipawn_loss: int = 50
     priority: tuple[str, ...] = ("knight", "bishop", "rook")
 
@@ -91,6 +92,7 @@ def load_config(path: str | Path) -> AppConfig:
         ),
         underpromotion=UnderpromotionConfig(
             enabled=bool(underpromotion_raw.get("enabled", True)),
+            required_when_safe=bool(underpromotion_raw.get("required_when_safe", True)),
             max_centipawn_loss=int(underpromotion_raw.get("max_centipawn_loss", 50)),
             priority=tuple(underpromotion_raw.get("priority", ["knight", "bishop", "rook"])),
         ),

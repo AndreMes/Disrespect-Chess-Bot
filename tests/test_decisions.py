@@ -37,7 +37,7 @@ class BestMoveFakeAnalyzer(FakeAnalyzer):
 
 
 def selector():
-    return DisrespectEngine(SafetyConfig(max_centipawn_loss=50, minimum_evaluation_centipawns=0, confirmation_depth=10), UnderpromotionConfig(True, 50, ("knight", "bishop", "rook")))
+    return DisrespectEngine(SafetyConfig(max_centipawn_loss=50, minimum_evaluation_centipawns=0, confirmation_depth=10), UnderpromotionConfig(True, True, 50, ("knight", "bishop", "rook")))
 
 
 def test_underpromotion_prefers_knight_when_safe():
@@ -45,6 +45,16 @@ def test_underpromotion_prefers_knight_when_safe():
     decision = selector().choose_move(BOARD, analyzer, 8, 3)
     assert decision.move == KNIGHT
     assert decision.source == "underpromotion"
+
+
+def test_underpromotion_wins_priority_over_early_disrespect():
+    analyzer = FakeAnalyzer({QUEEN: candidate(QUEEN, 100), KNIGHT: candidate(KNIGHT, 60), BISHOP: candidate(BISHOP, 90), ROOK: candidate(ROOK, 95)})
+    engine = DisrespectEngine(
+        SafetyConfig(max_centipawn_loss=50, minimum_evaluation_centipawns=0, confirmation_depth=10),
+        UnderpromotionConfig(True, True, 50, ("knight", "bishop", "rook")),
+        EarlySacrificeConfig(True, 14, 2, 16, 100, 1100, 0, -1200),
+    )
+    assert engine.choose_move(BOARD, analyzer, 8, 3).move == KNIGHT
 
 
 def test_underpromotion_falls_back_from_knight_to_bishop():

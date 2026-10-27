@@ -45,14 +45,14 @@ class DisrespectEngine:
         if not candidates:
             raise RuntimeError("Engine returned no legal candidate")
         best = candidates[0]
-        level = self.disrespect_level(bot_rating, opponent_rating)
-        sacrifice = self._choose_early_sacrifice(board, analyzer, best, level)
-        if sacrifice is not None:
-            return Decision(sacrifice.move, "early_sacrifice", best, sacrifice, "material_sacrifice")
         if self.underpromotion.enabled:
             underpromotion = self._choose_underpromotion(board, analyzer, best)
             if underpromotion is not None:
                 return Decision(underpromotion.move, "underpromotion", best, underpromotion, "underpromotion")
+        level = self.disrespect_level(bot_rating, opponent_rating)
+        sacrifice = self._choose_early_sacrifice(board, analyzer, best, level)
+        if sacrifice is not None:
+            return Decision(sacrifice.move, "early_sacrifice", best, sacrifice, "material_sacrifice")
         return Decision(best.move, "stockfish", best, best)
 
     def disrespect_level(self, bot_rating: int | None, opponent_rating: int | None) -> int:
