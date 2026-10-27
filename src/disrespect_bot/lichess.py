@@ -150,12 +150,14 @@ class LichessBot:
         selector = DisrespectEngine(self.config.safety, self.config.underpromotion)
         bot_color: chess.Color | None = None
         opening = None
+        opening_attempted = False
+        opponent_rating: int | None = None
         with StockfishAnalyzer(self.config.engine.path) as engine:
             for update in self.api.stream(f"/api/bot/game/stream/{game_id}"):
                 if update["type"] == "gameFull":
                     bot_color = chess.WHITE if update["white"]["id"].lower() == account_id.lower() else chess.BLACK
                     opponent = update["black"] if bot_color == chess.WHITE else update["white"]
-                    opening = opening_manager.choose(bot_color, opponent.get("rating"))
+                    opponent_rating = opponent.get("rating")
                     state = update["state"]
                 elif update["type"] == "gameState":
                     state = update
@@ -168,6 +170,9 @@ class LichessBot:
                     if state.get("status") not in {None, "started"}:
                         break
                     continue
+                if not opening_attempted:
+                    opening = opening_manager.choose(bot_color, opponent_rating, board)
+                    opening_attempted = True
                 move = opening_manager.next_move(board, opening, bot_color) if opening else None
                 if move:
                     source, detail = "opening", {"source": "opening"}

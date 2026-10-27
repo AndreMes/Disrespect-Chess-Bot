@@ -22,10 +22,13 @@ def main() -> None:
     manager = OpeningManager(config.openings)
     if errors := manager.validate():
         raise ValueError("Invalid opening configuration:\n- " + "\n- ".join(errors))
-    choice, node, logger = manager.choose(bot_color, args.opponent_rating), game, GameLogger(config.log_directory)
+    choice, opening_attempted, node, logger = None, False, game, GameLogger(config.log_directory)
     selector = DisrespectEngine(config.safety, config.underpromotion)
     with StockfishAnalyzer(config.engine.path) as engine:
         while not board.is_game_over(claim_draw=True):
+            if board.turn == bot_color and not opening_attempted:
+                choice = manager.choose(bot_color, args.opponent_rating, board)
+                opening_attempted = True
             move, source = (manager.next_move(board, choice, bot_color), "opening") if board.turn == bot_color and choice else (None, "stockfish")
             detail = {"source": source}
             if move is None:

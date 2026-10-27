@@ -7,6 +7,8 @@ usuário; a integração com a Bot API fica isolada para a próxima etapa.
 ## Princípios do MVP
 
 - O repertório é exclusivamente manual: nenhuma abertura é inventada.
+- Linhas com `bot_moves` executam somente os lances do bot, ignorando a resposta
+  adversária enquanto o próximo lance continuar legal.
 - Uma linha só é usada enquanto permanecer legal e compatível com a posição.
 - Fora do repertório, o melhor lance do Stockfish é o padrão.
 - Segredos não são armazenados; a futura integração lerá `LICHESS_BOT_TOKEN`.
