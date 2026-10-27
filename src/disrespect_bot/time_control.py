@@ -19,7 +19,7 @@ class TimeManagementConfig:
 class MateClockTauntConfig:
     enabled: bool = True
     minimum_disrespect_level: int = 45
-    target_remaining_seconds: float = 3.0
+    target_remaining_seconds: float = 1.0
     network_margin_seconds: float = 0.25
 
 

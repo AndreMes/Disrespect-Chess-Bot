@@ -151,18 +151,43 @@ class DisrespectEngine:
         ]
         if not pawns:
             return None
+        baseline_threats = self._opponent_pawn_capture_threats(board) if config.prioritize_pawn_safety else 0
+
+        def priority(move: chess.Move) -> tuple[int, int]:
+            after = board.copy(stack=False)
+            after.push(move)
+            threats = self._opponent_pawn_capture_threats(after) if config.prioritize_pawn_safety else 0
+            progress = chess.square_rank(move.to_square) if board.turn == chess.WHITE else 7 - chess.square_rank(move.to_square)
+            return threats, -progress
+
         advancing = sorted(
             pawns,
-            key=lambda move: chess.square_rank(move.to_square) if board.turn == chess.WHITE else 7 - chess.square_rank(move.to_square),
-            reverse=True,
+            key=priority,
         )
         for move in advancing:
+            after = board.copy(stack=False)
+            after.push(move)
+            if config.prioritize_pawn_safety and self._opponent_pawn_capture_threats(after) > baseline_threats:
+                continue
             candidate = analyzer.analyse_move(board, move, self.safety.confirmation_depth)
             if candidate.mate_in is not None and candidate.mate_in < 0:
                 continue
             if candidate.centipawns >= config.minimum_candidate_evaluation:
                 return candidate
         return None
+
+    @staticmethod
+    def _opponent_pawn_capture_threats(board: chess.Board) -> int:
+        """Count legal immediate captures of the side that just moved's pawns."""
+        pawn_color = not board.turn
+        threats = 0
+        for reply in board.legal_moves:
+            if not board.is_capture(reply):
+                continue
+            captured = board.piece_at(reply.to_square)
+            if captured and captured.color == pawn_color and captured.piece_type == chess.PAWN:
+                threats += 1
+        return threats
 
     def _choose_mate_delay_pawn_move(self, board: chess.Board, analyzer: Analyzer, best: Candidate, level: int) -> Candidate | None:
         config = self.mate_delay

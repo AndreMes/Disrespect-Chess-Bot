@@ -37,6 +37,7 @@ class WinningUnderpromotionConfig:
     minimum_best_evaluation: int = 500
     max_opponent_material: int = 5
     minimum_candidate_evaluation: int = 100
+    prioritize_pawn_safety: bool = True
 
 
 @dataclass(frozen=True)
@@ -129,6 +130,7 @@ def load_config(path: str | Path) -> AppConfig:
             minimum_best_evaluation=int(winning_underpromotion_raw.get("minimum_best_evaluation", 500)),
             max_opponent_material=int(winning_underpromotion_raw.get("max_opponent_material", 5)),
             minimum_candidate_evaluation=int(winning_underpromotion_raw.get("minimum_candidate_evaluation", 100)),
+            prioritize_pawn_safety=bool(winning_underpromotion_raw.get("prioritize_pawn_safety", True)),
         ),
         mate_delay=MateDelayConfig(
             enabled=bool(mate_delay_raw.get("enabled", True)),
@@ -162,7 +164,7 @@ def load_config(path: str | Path) -> AppConfig:
         mate_clock_taunt=MateClockTauntConfig(
             enabled=bool(mate_clock_taunt_raw.get("enabled", True)),
             minimum_disrespect_level=int(mate_clock_taunt_raw.get("minimum_disrespect_level", 45)),
-            target_remaining_seconds=float(mate_clock_taunt_raw.get("target_remaining_seconds", 3.0)),
+            target_remaining_seconds=float(mate_clock_taunt_raw.get("target_remaining_seconds", 1.0)),
             network_margin_seconds=float(mate_clock_taunt_raw.get("network_margin_seconds", 0.25)),
         ),
         lichess=LichessConfig(

@@ -29,6 +29,8 @@ behaviors:
     max_opponent_material: 5
     # A underpromotion precisa preservar pelo menos uma vantagem vencedora.
     minimum_candidate_evaluation: 100
+    # Em finais ganhos, não avance um peão se isso aumentar as capturas imediatas dele.
+    prioritize_pawn_safety: true
   mate_delay:
     enabled: true
     # Acima deste nível, mate forçado pode ser adiado para avançar peões.
@@ -40,7 +42,7 @@ behaviors:
     enabled: true
     # Com desrespeito alto, segura somente o lance que já é mate no tabuleiro.
     minimum_disrespect_level: 45
-    target_remaining_seconds: 3.0
+    target_remaining_seconds: 1.0
     # Folga para a rede e para a requisição chegar ao Lichess.
     network_margin_seconds: 0.25
   early_sacrifice:

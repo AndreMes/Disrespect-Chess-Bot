@@ -145,3 +145,13 @@ def test_high_disrespect_delays_forced_mate_for_a_safe_pawn_push():
 
     assert decision.move == pawn_push
     assert decision.event == "mate_delayed_for_pawn_promotion"
+
+
+def test_winning_endgame_avoids_increasing_immediate_pawn_captures():
+    board = chess.Board("7k/1p6/P7/8/8/8/8/K7 w - - 0 1")
+    engine = DisrespectEngine(SafetyConfig(), UnderpromotionConfig(False))
+
+    assert engine._opponent_pawn_capture_threats(board) == 1
+    after = board.copy(stack=False)
+    after.push_uci("a6a7")
+    assert engine._opponent_pawn_capture_threats(after) == 0

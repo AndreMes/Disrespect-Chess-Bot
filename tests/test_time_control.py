@@ -34,7 +34,7 @@ def test_disabled_time_management_leaves_depth_based_analysis():
 def test_clock_taunt_waits_only_for_an_actual_checkmate():
     board = chess.Board("7k/6Q1/6K1/8/8/8/8/8 w - - 0 1")
     mate = chess.Move.from_uci("g7h7")
-    config = MateClockTauntConfig(minimum_disrespect_level=45, target_remaining_seconds=3, network_margin_seconds=0.25)
+    config = MateClockTauntConfig(minimum_disrespect_level=45, target_remaining_seconds=1, network_margin_seconds=0.25)
 
-    assert mate_clock_taunt_delay_seconds(board, mate, 10_000, 65, config) == 6.75
+    assert mate_clock_taunt_delay_seconds(board, mate, 10_000, 65, config) == 8.75
     assert mate_clock_taunt_delay_seconds(board, mate, 10_000, 20, config) == 0.0
