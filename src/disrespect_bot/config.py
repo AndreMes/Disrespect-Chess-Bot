@@ -28,10 +28,21 @@ class UnderpromotionConfig:
 
 
 @dataclass(frozen=True)
+class LichessConfig:
+    enabled: bool = False
+    base_url: str = "https://lichess.org"
+    accept_challenges: bool = False
+    allowed_challengers: tuple[str, ...] = ()
+    allowed_variants: tuple[str, ...] = ("standard",)
+    max_concurrent_games: int = 1
+
+
+@dataclass(frozen=True)
 class AppConfig:
     engine: EngineConfig
     safety: SafetyConfig
     underpromotion: UnderpromotionConfig
+    lichess: LichessConfig
     openings: list[dict]
     log_directory: Path
     estimated_rating: int
@@ -43,6 +54,7 @@ def load_config(path: str | Path) -> AppConfig:
     engine_raw = raw.get("engine", {})
     safety_raw = raw.get("safety", {})
     underpromotion_raw = raw.get("behaviors", {}).get("underpromotion", {})
+    lichess_raw = raw.get("lichess", {})
     engine_path = os.getenv("STOCKFISH_PATH", engine_raw.get("path", ""))
     if not engine_path:
         raise ValueError("Configure engine.path or STOCKFISH_PATH.")
@@ -57,6 +69,14 @@ def load_config(path: str | Path) -> AppConfig:
             enabled=bool(underpromotion_raw.get("enabled", True)),
             max_centipawn_loss=int(underpromotion_raw.get("max_centipawn_loss", 50)),
             priority=tuple(underpromotion_raw.get("priority", ["knight", "bishop", "rook"])),
+        ),
+        lichess=LichessConfig(
+            enabled=bool(lichess_raw.get("enabled", False)),
+            base_url=str(lichess_raw.get("base_url", "https://lichess.org")).rstrip("/"),
+            accept_challenges=bool(lichess_raw.get("accept_challenges", False)),
+            allowed_challengers=tuple(name.lower() for name in lichess_raw.get("allowed_challengers", [])),
+            allowed_variants=tuple(lichess_raw.get("allowed_variants", ["standard"])),
+            max_concurrent_games=int(lichess_raw.get("max_concurrent_games", 1)),
         ),
         openings=list(raw.get("openings", [])),
         log_directory=Path(raw.get("logging", {}).get("directory", "logs")),

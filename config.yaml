@@ -17,6 +17,14 @@ behaviors:
     max_centipawn_loss: 50
     # A primeira promoção segura encontrada nesta ordem é escolhida.
     priority: [knight, bishop, rook]
+lichess:
+  # Permanece desligado até você criar uma conta BOT e fornecer o token pelo ambiente.
+  enabled: false
+  accept_challenges: false
+  # Só estes nomes de usuário podem desafiar o bot durante os testes iniciais.
+  allowed_challengers: []
+  allowed_variants: [standard]
+  max_concurrent_games: 1
 logging:
   directory: logs
 

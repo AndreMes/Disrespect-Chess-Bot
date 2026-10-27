@@ -7,7 +7,7 @@ name = "disrespect-bot"
 version = "0.1.0"
 description = "A configurable local foundation for the Disrespect chess bot"
 requires-python = ">=3.10"
-dependencies = ["python-chess>=1.999", "PyYAML>=6.0"]
+dependencies = ["python-chess>=1.999", "PyYAML>=6.0", "requests>=2.31"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
