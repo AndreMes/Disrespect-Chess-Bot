@@ -92,6 +92,8 @@ openings:
   - { name: White Knight to h3, color: white, weight: 1, enabled: true, bot_moves: [g1h3] }
   - { name: White Knight c3 back to b1, color: white, weight: 1, enabled: true, bot_moves: [b1c3, c3b1] }
   - { name: White Knight f3 back to g1, color: white, weight: 1, enabled: true, bot_moves: [g1f3, f3g1] }
+  - { name: White e4 King e2, color: white, weight: 1, enabled: true, bot_moves: [e2e4, e1e2] }
+  - { name: White f3 King f2, color: white, weight: 1, enabled: true, bot_moves: [f2f3, e1f2] }
   - { name: White g-pawn thrust, color: white, weight: 1, enabled: true, bot_moves: [g2g4] }
   - { name: White h-pawn thrust, color: white, weight: 1, enabled: true, bot_moves: [h2h4] }
   - { name: White a-pawn thrust, color: white, weight: 1, enabled: true, bot_moves: [a2a4] }
@@ -101,6 +103,8 @@ openings:
   - { name: Black Knight to h6, color: black, weight: 1, enabled: true, bot_moves: [g8h6] }
   - { name: Black Knight c6 back to b8, color: black, weight: 1, enabled: true, bot_moves: [b8c6, c6b8] }
   - { name: Black Knight f6 back to g8, color: black, weight: 1, enabled: true, bot_moves: [g8f6, f6g8] }
+  - { name: Black e5 King e7, color: black, weight: 1, enabled: true, bot_moves: [e7e5, e8e7] }
+  - { name: Black f6 King f7, color: black, weight: 1, enabled: true, bot_moves: [f7f6, e8f7] }
   - { name: Black g-pawn thrust, color: black, weight: 1, enabled: true, bot_moves: [g7g5] }
   - { name: Black h-pawn thrust, color: black, weight: 1, enabled: true, bot_moves: [h7h5] }
   - { name: Black a-pawn thrust, color: black, weight: 1, enabled: true, bot_moves: [a7a5] }

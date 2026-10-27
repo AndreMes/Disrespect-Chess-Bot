@@ -45,3 +45,13 @@ def test_bot_only_line_ignores_the_opponents_response():
     board.push_uci("g1f3")
     board.push_uci("d7d5")
     assert manager.next_move(board, choice, chess.WHITE) == chess.Move.from_uci("f3g1")
+
+
+def test_king_walk_line_ignores_the_opponents_response():
+    manager = OpeningManager([{"name": "e4 king e2", "color": "white", "bot_moves": ["e2e4", "e1e2"]}])
+    board = chess.Board()
+    choice = manager.choose(chess.WHITE, None, board)
+    assert manager.next_move(board, choice, chess.WHITE) == chess.Move.from_uci("e2e4")
+    board.push_uci("e2e4")
+    board.push_uci("a7a6")
+    assert manager.next_move(board, choice, chess.WHITE) == chess.Move.from_uci("e1e2")
