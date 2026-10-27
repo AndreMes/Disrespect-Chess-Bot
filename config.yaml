@@ -47,8 +47,8 @@ behaviors:
     network_margin_seconds: 0.25
   early_sacrifice:
     enabled: true
-    # Procura ofertas de material até o início do décimo lance do bot.
-    max_ply: 20
+    # Só procura ofertas de material até o início do sétimo lance do bot.
+    max_ply: 14
     min_candidates: 2
     max_candidates: 16
     # Com vantagem de rating de ~325 pontos, atinge o desrespeito máximo.
@@ -57,9 +57,9 @@ behaviors:
     minimum_evaluation_at_level_0: 0
     minimum_evaluation_at_level_100: -1200
 disrespect:
-  base_level: 35
-  # A cada 5 pontos de vantagem, sobe um nível (limitado a 100).
-  rating_points_per_level: 5
+  base_level: 15
+  # A cada 10 pontos de vantagem, sobe um nível (limitado a 100).
+  rating_points_per_level: 10
   maximum_level: 100
 time_management:
   enabled: true
