@@ -47,19 +47,19 @@ behaviors:
     network_margin_seconds: 0.25
   early_sacrifice:
     enabled: true
-    # Só procura ofertas de material até o início do sétimo lance do bot.
-    max_ply: 14
+    # Procura ofertas de material até o início do décimo quinto lance do bot.
+    max_ply: 30
     min_candidates: 2
     max_candidates: 16
-    # Com vantagem de rating >400, a interpolação já permite ~650 centipawns.
+    # Com vantagem de rating de ~325 pontos, atinge o desrespeito máximo.
     max_centipawn_loss_at_level_0: 100
-    max_centipawn_loss_at_level_100: 1100
+    max_centipawn_loss_at_level_100: 1600
     minimum_evaluation_at_level_0: 0
-    minimum_evaluation_at_level_100: -1200
+    minimum_evaluation_at_level_100: -1600
 disrespect:
-  base_level: 15
-  # A cada 10 pontos de vantagem, sobe um nível (limitado a 100).
-  rating_points_per_level: 10
+  base_level: 35
+  # A cada 5 pontos de vantagem, sobe um nível (limitado a 100).
+  rating_points_per_level: 5
   maximum_level: 100
 time_management:
   enabled: true
