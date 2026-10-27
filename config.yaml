@@ -19,11 +19,12 @@ behaviors:
     priority: [knight, bishop, rook]
 lichess:
   # Permanece desligado até você criar uma conta BOT e fornecer o token pelo ambiente.
-  enabled: false
-  accept_challenges: false
+  enabled: true
+  accept_challenges: true
   # Só estes nomes de usuário podem desafiar o bot durante os testes iniciais.
-  allowed_challengers: []
+  allowed_challengers: ["zAmazed"]
   allowed_variants: [standard]
+  allowed_speeds: [blitz, rapid, classical]
   max_concurrent_games: 1
 logging:
   directory: logs

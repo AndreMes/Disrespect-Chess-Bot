@@ -55,11 +55,13 @@ class LichessApi:
 def challenge_is_allowed(challenge: dict, config: LichessConfig, active_games: int) -> bool:
     challenger = challenge.get("challenger", {}).get("name", "").lower()
     variant = challenge.get("variant", {}).get("key")
+    speed = challenge.get("speed")
     return (
         config.accept_challenges
         and active_games < config.max_concurrent_games
         and challenger in config.allowed_challengers
         and variant in config.allowed_variants
+        and speed in config.allowed_speeds
     )
 
 
@@ -86,11 +88,21 @@ class LichessBot:
                         self.active_games += 1
                         try:
                             self._play_game(event["game"]["id"], account["id"])
+                        except requests.HTTPError as error:
+                            response = error.response
+                            LOG.error(
+                                "Unable to stream game %s (HTTP %s): %s",
+                                event["game"]["id"],
+                                response.status_code if response else "?",
+                                response.text[:300] if response else error,
+                            )
                         finally:
                             self.active_games -= 1
             except requests.RequestException as error:
-                LOG.warning("Lichess stream disconnected (%s); retrying in %ss", error, retry_seconds)
-                time.sleep(retry_seconds)
+                status = error.response.status_code if isinstance(error, requests.HTTPError) and error.response else None
+                delay = 60 if status == 429 else retry_seconds
+                LOG.warning("Lichess stream disconnected (%s); retrying in %ss", error, delay)
+                time.sleep(delay)
                 retry_seconds = min(retry_seconds * 2, 60)
 
     def _handle_challenge(self, challenge: dict) -> None:
