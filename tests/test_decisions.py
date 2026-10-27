@@ -1,6 +1,6 @@
 import chess
 
-from disrespect_bot.config import EarlySacrificeConfig, SafetyConfig, UnderpromotionConfig
+from disrespect_bot.config import DisrespectConfig, EarlySacrificeConfig, SafetyConfig, UnderpromotionConfig
 from disrespect_bot.decisions import DisrespectEngine
 from disrespect_bot.engine import Candidate
 
@@ -67,8 +67,21 @@ def test_early_sacrifice_offers_a_piece_when_the_position_stays_playable():
     engine = DisrespectEngine(
         SafetyConfig(confirmation_depth=10),
         UnderpromotionConfig(False),
-        EarlySacrificeConfig(True, 14, 8, 350, -200),
+        EarlySacrificeConfig(True, 14, 2, 16, 100, 1100, 0, -1200),
     )
     decision = engine.choose_move(board, analyzer, 8, 3)
     assert decision.move == sacrifice
     assert decision.event == "material_sacrifice"
+
+
+def test_rating_advantage_increases_disrespect_to_queen_for_piece_margin():
+    engine = DisrespectEngine(
+        SafetyConfig(),
+        UnderpromotionConfig(False),
+        EarlySacrificeConfig(),
+        DisrespectConfig(base_level=15, rating_points_per_level=10, maximum_level=100),
+        estimated_bot_rating=2400,
+    )
+    # 500 points ahead yields level 65 and a tolerance of 750 centipawns.
+    assert engine.disrespect_level(2400, 1900) == 65
+    assert engine._interpolate(100, 1100, 65) == 750

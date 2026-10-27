@@ -21,10 +21,18 @@ behaviors:
     enabled: true
     # Só procura ofertas de material até o início do sétimo lance do bot.
     max_ply: 14
-    max_candidates: 8
-    # Mais permissivo que a segurança normal, mas ainda recusa posição claramente perdida.
-    max_centipawn_loss: 350
-    minimum_evaluation_centipawns: -200
+    min_candidates: 2
+    max_candidates: 16
+    # Com vantagem de rating >400, a interpolação já permite ~650 centipawns.
+    max_centipawn_loss_at_level_0: 100
+    max_centipawn_loss_at_level_100: 1100
+    minimum_evaluation_at_level_0: 0
+    minimum_evaluation_at_level_100: -1200
+disrespect:
+  base_level: 15
+  # A cada 10 pontos de vantagem, sobe um nível (limitado a 100).
+  rating_points_per_level: 10
+  maximum_level: 100
 lichess:
   # Permanece desligado até você criar uma conta BOT e fornecer o token pelo ambiente.
   enabled: true

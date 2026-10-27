@@ -5,7 +5,7 @@ from typing import Protocol
 
 import chess
 
-from .config import EarlySacrificeConfig, SafetyConfig, UnderpromotionConfig
+from .config import DisrespectConfig, EarlySacrificeConfig, SafetyConfig, UnderpromotionConfig
 from .engine import Candidate
 
 
@@ -33,17 +33,20 @@ class DisrespectEngine:
     }
     _piece_values = {chess.KNIGHT: 3, chess.BISHOP: 3, chess.ROOK: 5, chess.QUEEN: 9}
 
-    def __init__(self, safety: SafetyConfig, underpromotion: UnderpromotionConfig, early_sacrifice: EarlySacrificeConfig | None = None):
+    def __init__(self, safety: SafetyConfig, underpromotion: UnderpromotionConfig, early_sacrifice: EarlySacrificeConfig | None = None, disrespect: DisrespectConfig | None = None, estimated_bot_rating: int = 2000):
         self.safety = safety
         self.underpromotion = underpromotion
         self.early_sacrifice = early_sacrifice or EarlySacrificeConfig()
+        self.disrespect = disrespect or DisrespectConfig()
+        self.estimated_bot_rating = estimated_bot_rating
 
-    def choose_move(self, board: chess.Board, analyzer: Analyzer, depth: int, multipv: int) -> Decision:
+    def choose_move(self, board: chess.Board, analyzer: Analyzer, depth: int, multipv: int, bot_rating: int | None = None, opponent_rating: int | None = None) -> Decision:
         candidates = analyzer.candidates(board, depth, multipv)
         if not candidates:
             raise RuntimeError("Engine returned no legal candidate")
         best = candidates[0]
-        sacrifice = self._choose_early_sacrifice(board, analyzer, best)
+        level = self.disrespect_level(bot_rating, opponent_rating)
+        sacrifice = self._choose_early_sacrifice(board, analyzer, best, level)
         if sacrifice is not None:
             return Decision(sacrifice.move, "early_sacrifice", best, sacrifice, "material_sacrifice")
         if self.underpromotion.enabled:
@@ -52,17 +55,24 @@ class DisrespectEngine:
                 return Decision(underpromotion.move, "underpromotion", best, underpromotion, "underpromotion")
         return Decision(best.move, "stockfish", best, best)
 
-    def _choose_early_sacrifice(self, board: chess.Board, analyzer: Analyzer, initial_best: Candidate) -> Candidate | None:
+    def disrespect_level(self, bot_rating: int | None, opponent_rating: int | None) -> int:
+        if opponent_rating is None:
+            return self.disrespect.base_level
+        advantage = max(0, (bot_rating or self.estimated_bot_rating) - opponent_rating)
+        return min(self.disrespect.maximum_level, self.disrespect.base_level + advantage // self.disrespect.rating_points_per_level)
+
+    def _choose_early_sacrifice(self, board: chess.Board, analyzer: Analyzer, initial_best: Candidate, level: int) -> Candidate | None:
         config = self.early_sacrifice
         if not config.enabled or board.ply() >= config.max_ply:
             return None
-        offered = self._offered_piece_moves(board)[:config.max_candidates]
+        candidate_count = self._interpolate(config.min_candidates, config.max_candidates, level)
+        offered = self._offered_piece_moves(board)[:candidate_count]
         if not offered:
             return None
         best = analyzer.analyse_move(board, initial_best.move, self.safety.confirmation_depth)
         for move in offered:
             candidate = analyzer.analyse_move(board, move, self.safety.confirmation_depth)
-            if self._safe_sacrifice(best, candidate):
+            if self._safe_sacrifice(best, candidate, level):
                 return candidate
         return None
 
@@ -106,13 +116,17 @@ class DisrespectEngine:
         )
         return candidate.centipawns >= floor
 
-    def _safe_sacrifice(self, best: Candidate, candidate: Candidate) -> bool:
+    @staticmethod
+    def _interpolate(low: int, high: int, level: int) -> int:
+        return low + (high - low) * max(0, min(level, 100)) // 100
+
+    def _safe_sacrifice(self, best: Candidate, candidate: Candidate, level: int) -> bool:
         if candidate.mate_in is not None and candidate.mate_in < 0:
             return False
         if best.mate_in is not None:
             return best.mate_in > 0 and candidate.mate_in is not None and candidate.mate_in > 0
         floor = max(
-            self.early_sacrifice.minimum_evaluation_centipawns,
-            best.centipawns - self.early_sacrifice.max_centipawn_loss,
+            self._interpolate(self.early_sacrifice.minimum_evaluation_at_level_0, self.early_sacrifice.minimum_evaluation_at_level_100, level),
+            best.centipawns - self._interpolate(self.early_sacrifice.max_centipawn_loss_at_level_0, self.early_sacrifice.max_centipawn_loss_at_level_100, level),
         )
         return candidate.centipawns >= floor

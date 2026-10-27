@@ -147,17 +147,20 @@ class LichessBot:
         board = chess.Board()
         logger = GameLogger(self.config.log_directory)
         opening_manager = OpeningManager(self.config.openings)
-        selector = DisrespectEngine(self.config.safety, self.config.underpromotion, self.config.early_sacrifice)
+        selector = DisrespectEngine(self.config.safety, self.config.underpromotion, self.config.early_sacrifice, self.config.disrespect, self.config.estimated_rating)
         bot_color: chess.Color | None = None
         opening = None
         opening_attempted = False
         opponent_rating: int | None = None
+        bot_rating: int | None = None
         with StockfishAnalyzer(self.config.engine.path) as engine:
             for update in self.api.stream(f"/api/bot/game/stream/{game_id}"):
                 if update["type"] == "gameFull":
                     bot_color = chess.WHITE if update["white"]["id"].lower() == account_id.lower() else chess.BLACK
                     opponent = update["black"] if bot_color == chess.WHITE else update["white"]
+                    bot_player = update["white"] if bot_color == chess.WHITE else update["black"]
                     opponent_rating = opponent.get("rating")
+                    bot_rating = bot_player.get("rating")
                     state = update["state"]
                 elif update["type"] == "gameState":
                     state = update
@@ -177,11 +180,12 @@ class LichessBot:
                 if move:
                     source, detail = "opening", {"source": "opening"}
                 else:
-                    decision = selector.choose_move(board, engine, self.config.engine.analysis_depth, self.config.engine.multipv)
+                    decision = selector.choose_move(board, engine, self.config.engine.analysis_depth, self.config.engine.multipv, bot_rating, opponent_rating)
                     move, source = decision.move, decision.source
                     detail = {"source": source, "best_centipawns": decision.best.centipawns, "chosen_centipawns": decision.chosen.centipawns, "best_wdl": decision.best.wdl}
                     if decision.event:
                         detail["event"] = decision.event
+                    detail["disrespect_level"] = selector.disrespect_level(bot_rating, opponent_rating)
                 detail["uci"] = move.uci()
                 logger.event(ply=board.ply(), fen=board.fen(), kind="move", detail=detail)
                 self.api.play_move(game_id, move)

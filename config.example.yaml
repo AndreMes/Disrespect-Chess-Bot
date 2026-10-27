@@ -16,9 +16,16 @@ behaviors:
   early_sacrifice:
     enabled: true
     max_ply: 14
-    max_candidates: 8
-    max_centipawn_loss: 350
-    minimum_evaluation_centipawns: -200
+    min_candidates: 2
+    max_candidates: 16
+    max_centipawn_loss_at_level_0: 100
+    max_centipawn_loss_at_level_100: 1100
+    minimum_evaluation_at_level_0: 0
+    minimum_evaluation_at_level_100: -1200
+disrespect:
+  base_level: 15
+  rating_points_per_level: 10
+  maximum_level: 100
 lichess:
   enabled: false
   accept_challenges: false

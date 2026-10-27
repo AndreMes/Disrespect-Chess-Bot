@@ -31,9 +31,19 @@ class UnderpromotionConfig:
 class EarlySacrificeConfig:
     enabled: bool = True
     max_ply: int = 14
-    max_candidates: int = 8
-    max_centipawn_loss: int = 350
-    minimum_evaluation_centipawns: int = -200
+    min_candidates: int = 2
+    max_candidates: int = 16
+    max_centipawn_loss_at_level_0: int = 100
+    max_centipawn_loss_at_level_100: int = 1200
+    minimum_evaluation_at_level_0: int = 0
+    minimum_evaluation_at_level_100: int = -800
+
+
+@dataclass(frozen=True)
+class DisrespectConfig:
+    base_level: int = 15
+    rating_points_per_level: int = 10
+    maximum_level: int = 100
 
 
 @dataclass(frozen=True)
@@ -53,6 +63,7 @@ class AppConfig:
     safety: SafetyConfig
     underpromotion: UnderpromotionConfig
     early_sacrifice: EarlySacrificeConfig
+    disrespect: DisrespectConfig
     lichess: LichessConfig
     openings: list[dict]
     log_directory: Path
@@ -66,6 +77,7 @@ def load_config(path: str | Path) -> AppConfig:
     safety_raw = raw.get("safety", {})
     underpromotion_raw = raw.get("behaviors", {}).get("underpromotion", {})
     early_sacrifice_raw = raw.get("behaviors", {}).get("early_sacrifice", {})
+    disrespect_raw = raw.get("disrespect", {})
     lichess_raw = raw.get("lichess", {})
     engine_path = os.getenv("STOCKFISH_PATH", engine_raw.get("path", ""))
     if not engine_path:
@@ -85,9 +97,17 @@ def load_config(path: str | Path) -> AppConfig:
         early_sacrifice=EarlySacrificeConfig(
             enabled=bool(early_sacrifice_raw.get("enabled", True)),
             max_ply=int(early_sacrifice_raw.get("max_ply", 14)),
-            max_candidates=int(early_sacrifice_raw.get("max_candidates", 8)),
-            max_centipawn_loss=int(early_sacrifice_raw.get("max_centipawn_loss", 350)),
-            minimum_evaluation_centipawns=int(early_sacrifice_raw.get("minimum_evaluation_centipawns", -200)),
+            min_candidates=int(early_sacrifice_raw.get("min_candidates", 2)),
+            max_candidates=int(early_sacrifice_raw.get("max_candidates", 16)),
+            max_centipawn_loss_at_level_0=int(early_sacrifice_raw.get("max_centipawn_loss_at_level_0", 100)),
+            max_centipawn_loss_at_level_100=int(early_sacrifice_raw.get("max_centipawn_loss_at_level_100", 1200)),
+            minimum_evaluation_at_level_0=int(early_sacrifice_raw.get("minimum_evaluation_at_level_0", 0)),
+            minimum_evaluation_at_level_100=int(early_sacrifice_raw.get("minimum_evaluation_at_level_100", -800)),
+        ),
+        disrespect=DisrespectConfig(
+            base_level=int(disrespect_raw.get("base_level", 15)),
+            rating_points_per_level=int(disrespect_raw.get("rating_points_per_level", 10)),
+            maximum_level=int(disrespect_raw.get("maximum_level", 100)),
         ),
         lichess=LichessConfig(
             enabled=bool(lichess_raw.get("enabled", False)),
