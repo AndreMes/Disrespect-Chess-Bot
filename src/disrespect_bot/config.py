@@ -184,6 +184,8 @@ def load_config(path: str | Path) -> AppConfig:
             minimum_disrespect_level=int(mate_clock_taunt_raw.get("minimum_disrespect_level", 45)),
             target_remaining_seconds=float(mate_clock_taunt_raw.get("target_remaining_seconds", 1.0)),
             network_margin_seconds=float(mate_clock_taunt_raw.get("network_margin_seconds", 0.25)),
+            send_chat_message=bool(mate_clock_taunt_raw.get("send_chat_message", True)),
+            chat_message=str(mate_clock_taunt_raw.get("chat_message", "Resign Now!")),
         ),
         lichess=LichessConfig(
             enabled=bool(lichess_raw.get("enabled", False)),

@@ -70,8 +70,8 @@ class LichessApi:
                 if line:
                     yield json.loads(line)
 
-    def post(self, endpoint: str) -> None:
-        response = self.session.post(f"{self.base_url}{endpoint}", timeout=15)
+    def post(self, endpoint: str, data: dict[str, str] | None = None) -> None:
+        response = self.session.post(f"{self.base_url}{endpoint}", data=data, timeout=15)
         response.raise_for_status()
 
     def account(self) -> dict:
@@ -87,6 +87,9 @@ class LichessApi:
 
     def play_move(self, game_id: str, move: chess.Move) -> None:
         self.post(f"/api/bot/game/{game_id}/move/{move.uci()}")
+
+    def chat(self, game_id: str, message: str) -> None:
+        self.post(f"/api/bot/game/{game_id}/chat", {"room": "player", "text": message})
 
 
 def challenge_is_allowed(challenge: dict, config: LichessConfig, active_games: int) -> bool:
@@ -220,6 +223,12 @@ class LichessBot:
                     self.config.mate_clock_taunt,
                 )
                 if taunt_delay:
+                    if self.config.mate_clock_taunt.send_chat_message:
+                        try:
+                            self.api.chat(game_id, self.config.mate_clock_taunt.chat_message)
+                            detail["mate_clock_taunt_message"] = self.config.mate_clock_taunt.chat_message
+                        except requests.RequestException as error:
+                            LOG.warning("Unable to send mate taunt for game %s: %s", game_id, error)
                     LOG.info("Holding checkmate for %.1fs of clock taunt", taunt_delay)
                     time.sleep(taunt_delay)
                     detail["mate_clock_taunt_wait_ms"] = round(taunt_delay * 1000)

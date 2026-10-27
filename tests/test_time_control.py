@@ -38,3 +38,7 @@ def test_clock_taunt_waits_only_for_an_actual_checkmate():
 
     assert mate_clock_taunt_delay_seconds(board, mate, 10_000, 65, config) == 8.75
     assert mate_clock_taunt_delay_seconds(board, mate, 10_000, 20, config) == 0.0
+
+
+def test_mate_clock_taunt_has_the_requested_chat_message_by_default():
+    assert MateClockTauntConfig().chat_message == "Resign Now!"

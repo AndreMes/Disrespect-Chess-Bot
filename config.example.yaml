@@ -31,6 +31,8 @@ behaviors:
     minimum_disrespect_level: 45
     target_remaining_seconds: 1.0
     network_margin_seconds: 0.25
+    send_chat_message: true
+    chat_message: "Resign Now!"
   clock_pressure:
     enabled: true
     trigger_seconds: 20.0

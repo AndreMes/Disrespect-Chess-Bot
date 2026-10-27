@@ -45,6 +45,9 @@ behaviors:
     target_remaining_seconds: 1.0
     # Folga para a rede e para a requisição chegar ao Lichess.
     network_margin_seconds: 0.25
+    # A mensagem é enviada no chat dos jogadores antes da espera pelo mate.
+    send_chat_message: true
+    chat_message: "Resign Now!"
   clock_pressure:
     enabled: true
     # A agressividade cresce quando o adversário entra neste intervalo de tempo.

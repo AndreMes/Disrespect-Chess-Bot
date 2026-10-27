@@ -21,6 +21,8 @@ class MateClockTauntConfig:
     minimum_disrespect_level: int = 45
     target_remaining_seconds: float = 1.0
     network_margin_seconds: float = 0.25
+    send_chat_message: bool = True
+    chat_message: str = "Resign Now!"
 
 
 def move_time_budget_seconds(clock_ms: int | None, increment_ms: int | None, config: TimeManagementConfig) -> float | None:
