@@ -43,7 +43,7 @@ lichess:
   accept_challenges: false
   allowed_challengers: []
   allowed_variants: [standard]
-  allowed_speeds: [blitz, rapid, classical]
+  allowed_speeds: [bullet, blitz, rapid, classical]
   max_concurrent_games: 1
 logging:
   directory: logs

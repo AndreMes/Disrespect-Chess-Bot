@@ -71,7 +71,7 @@ class LichessConfig:
     accept_challenges: bool = False
     allowed_challengers: tuple[str, ...] = ()
     allowed_variants: tuple[str, ...] = ("standard",)
-    allowed_speeds: tuple[str, ...] = ("blitz", "rapid", "classical")
+    allowed_speeds: tuple[str, ...] = ("bullet", "blitz", "rapid", "classical")
     max_concurrent_games: int = 1
 
 
@@ -151,7 +151,7 @@ def load_config(path: str | Path) -> AppConfig:
             accept_challenges=bool(lichess_raw.get("accept_challenges", False)),
             allowed_challengers=tuple(name.lower() for name in lichess_raw.get("allowed_challengers", [])),
             allowed_variants=tuple(lichess_raw.get("allowed_variants", ["standard"])),
-            allowed_speeds=tuple(lichess_raw.get("allowed_speeds", ["blitz", "rapid", "classical"])),
+            allowed_speeds=tuple(lichess_raw.get("allowed_speeds", ["bullet", "blitz", "rapid", "classical"])),
             max_concurrent_games=int(lichess_raw.get("max_concurrent_games", 1)),
         ),
         openings=list(raw.get("openings", [])),

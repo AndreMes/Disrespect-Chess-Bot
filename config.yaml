@@ -59,7 +59,7 @@ lichess:
   # Só estes nomes de usuário podem desafiar o bot durante os testes iniciais.
   allowed_challengers: ["zAmazed"]
   allowed_variants: [standard]
-  allowed_speeds: [blitz, rapid, classical]
+  allowed_speeds: [bullet, blitz, rapid, classical]
   max_concurrent_games: 1
 logging:
   directory: logs
