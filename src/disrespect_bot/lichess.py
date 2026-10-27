@@ -7,6 +7,7 @@ import time
 from typing import Iterator
 
 import chess
+import chess.pgn
 import requests
 
 from .config import AppConfig, LichessConfig, load_config
@@ -14,6 +15,7 @@ from .decisions import DisrespectEngine
 from .engine import StockfishAnalyzer
 from .logging import GameLogger
 from .openings import OpeningManager
+from .time_control import mate_clock_taunt_delay_seconds, move_time_budget_seconds
 
 LOG = logging.getLogger(__name__)
 
@@ -40,6 +42,17 @@ def game_id_from_event(game: dict) -> str:
 
 def is_bot_account(account: dict) -> bool:
     return account.get("title") == "BOT"
+
+
+def lichess_result(state: dict) -> str:
+    winner = state.get("winner")
+    if winner == "white":
+        return "1-0"
+    if winner == "black":
+        return "0-1"
+    if state.get("status") not in {None, "started", "created"}:
+        return "1/2-1/2"
+    return "*"
 
 
 class LichessApi:
@@ -153,9 +166,12 @@ class LichessBot:
         opening_attempted = False
         opponent_rating: int | None = None
         bot_rating: int | None = None
+        state: dict = {}
+        players: dict[str, dict] = {}
         with StockfishAnalyzer(self.config.engine.path) as engine:
             for update in self.api.stream(f"/api/bot/game/stream/{game_id}"):
                 if update["type"] == "gameFull":
+                    players = {"white": update["white"], "black": update["black"]}
                     bot_color = chess.WHITE if update["white"]["id"].lower() == account_id.lower() else chess.BLACK
                     opponent = update["black"] if bot_color == chess.WHITE else update["white"]
                     bot_player = update["white"] if bot_color == chess.WHITE else update["black"]
@@ -177,21 +193,46 @@ class LichessBot:
                     opening = opening_manager.choose(bot_color, opponent_rating, board)
                     opening_attempted = True
                 move = opening_manager.next_move(board, opening, bot_color) if opening else None
+                clock_ms = state.get("wtime") if bot_color == chess.WHITE else state.get("btime")
+                increment_ms = state.get("winc") if bot_color == chess.WHITE else state.get("binc")
                 if move:
                     source, detail = "opening", {"source": "opening"}
                 else:
-                    decision = selector.choose_move(board, engine, self.config.engine.analysis_depth, self.config.engine.multipv, bot_rating, opponent_rating)
+                    budget = move_time_budget_seconds(clock_ms, increment_ms, self.config.time_management)
+                    engine.set_move_time_budget(budget)
+                    try:
+                        decision = selector.choose_move(board, engine, self.config.engine.analysis_depth, self.config.engine.multipv, bot_rating, opponent_rating)
+                    finally:
+                        engine.clear_move_time_budget()
                     move, source = decision.move, decision.source
                     detail = {"source": source, "best_centipawns": decision.best.centipawns, "chosen_centipawns": decision.chosen.centipawns, "best_wdl": decision.best.wdl}
                     if decision.event:
                         detail["event"] = decision.event
                     detail["disrespect_level"] = selector.disrespect_level(bot_rating, opponent_rating)
+                    detail["engine_budget_ms"] = None if budget is None else round(budget * 1000)
+                taunt_delay = mate_clock_taunt_delay_seconds(
+                    board,
+                    move,
+                    clock_ms,
+                    selector.disrespect_level(bot_rating, opponent_rating),
+                    self.config.mate_clock_taunt,
+                )
+                if taunt_delay:
+                    LOG.info("Holding checkmate for %.1fs of clock taunt", taunt_delay)
+                    time.sleep(taunt_delay)
+                    detail["mate_clock_taunt_wait_ms"] = round(taunt_delay * 1000)
+                detail["clock_ms"] = clock_ms
+                detail["increment_ms"] = increment_ms
                 detail["uci"] = move.uci()
                 logger.event(ply=board.ply(), fen=board.fen(), kind="move", detail=detail)
                 self.api.play_move(game_id, move)
-        # Save decision events even if Lichess stores the authoritative PGN.
-        logger.directory.mkdir(parents=True, exist_ok=True)
-        (logger.directory / f"lichess-{game_id}.json").write_text(json.dumps(logger.events, ensure_ascii=False, indent=2), encoding="utf-8")
+        game = chess.pgn.Game.from_board(board)
+        game.headers["Site"] = f"https://lichess.org/{game_id}"
+        game.headers["White"] = players.get("white", {}).get("name", "White")
+        game.headers["Black"] = players.get("black", {}).get("name", "Black")
+        game.headers["Result"] = lichess_result(state)
+        pgn_path, json_path = logger.save(game, stem=f"lichess-{game_id}")
+        LOG.info("Saved game log: %s and %s", pgn_path, json_path)
 
 
 def main() -> None:

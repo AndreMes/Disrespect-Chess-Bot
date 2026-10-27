@@ -36,6 +36,13 @@ behaviors:
     max_pawn_candidates: 3
     # Só abandona o mate imediato por uma posição ainda esmagadoramente ganha.
     minimum_candidate_evaluation: 300
+  mate_clock_taunt:
+    enabled: true
+    # Com desrespeito alto, segura somente o lance que já é mate no tabuleiro.
+    minimum_disrespect_level: 45
+    target_remaining_seconds: 3.0
+    # Folga para a rede e para a requisição chegar ao Lichess.
+    network_margin_seconds: 0.25
   early_sacrifice:
     enabled: true
     # Só procura ofertas de material até o início do sétimo lance do bot.
@@ -52,6 +59,15 @@ disrespect:
   # A cada 10 pontos de vantagem, sobe um nível (limitado a 100).
   rating_points_per_level: 10
   maximum_level: 100
+time_management:
+  enabled: true
+  # Reserva para a rede e para enviar o lance ao Lichess.
+  reserve_seconds: 0.20
+  minimum_think_seconds: 0.03
+  maximum_think_seconds: 0.80
+  # Fração do relógio e do incremento que pode ir para a análise desta jogada.
+  clock_fraction: 0.012
+  increment_fraction: 0.50
 lichess:
   # Permanece desligado até você criar uma conta BOT e fornecer o token pelo ambiente.
   enabled: true

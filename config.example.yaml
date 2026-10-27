@@ -25,6 +25,11 @@ behaviors:
     minimum_disrespect_level: 45
     max_pawn_candidates: 3
     minimum_candidate_evaluation: 300
+  mate_clock_taunt:
+    enabled: true
+    minimum_disrespect_level: 45
+    target_remaining_seconds: 3.0
+    network_margin_seconds: 0.25
   early_sacrifice:
     enabled: true
     max_ply: 14
@@ -38,6 +43,13 @@ disrespect:
   base_level: 15
   rating_points_per_level: 10
   maximum_level: 100
+time_management:
+  enabled: true
+  reserve_seconds: 0.20
+  minimum_think_seconds: 0.03
+  maximum_think_seconds: 0.80
+  clock_fraction: 0.012
+  increment_fraction: 0.50
 lichess:
   enabled: false
   accept_challenges: false

@@ -1,7 +1,7 @@
 import requests
 
 from disrespect_bot.config import LichessConfig
-from disrespect_bot.lichess import challenge_is_allowed, game_id_from_event, is_bot_account, retry_delay
+from disrespect_bot.lichess import challenge_is_allowed, game_id_from_event, is_bot_account, lichess_result, retry_delay
 
 
 CONFIG = LichessConfig(enabled=True, accept_challenges=True, allowed_challengers=("andre",), allowed_variants=("standard",), allowed_speeds=("bullet", "rapid"), max_concurrent_games=1)
@@ -37,3 +37,9 @@ def test_uses_game_id_from_start_event():
 def test_requires_bot_title_on_account():
     assert is_bot_account({"title": "BOT"})
     assert not is_bot_account({"title": None})
+
+
+def test_lichess_result_uses_winner_and_draw_status():
+    assert lichess_result({"status": "mate", "winner": "white"}) == "1-0"
+    assert lichess_result({"status": "draw"}) == "1/2-1/2"
+    assert lichess_result({"status": "started"}) == "*"

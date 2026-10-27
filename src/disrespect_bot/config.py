@@ -5,6 +5,8 @@ from pathlib import Path
 import os
 import yaml
 
+from .time_control import MateClockTauntConfig, TimeManagementConfig
+
 
 @dataclass(frozen=True)
 class EngineConfig:
@@ -84,6 +86,8 @@ class AppConfig:
     mate_delay: MateDelayConfig
     early_sacrifice: EarlySacrificeConfig
     disrespect: DisrespectConfig
+    time_management: TimeManagementConfig
+    mate_clock_taunt: MateClockTauntConfig
     lichess: LichessConfig
     openings: list[dict]
     log_directory: Path
@@ -100,6 +104,8 @@ def load_config(path: str | Path) -> AppConfig:
     mate_delay_raw = raw.get("behaviors", {}).get("mate_delay", {})
     early_sacrifice_raw = raw.get("behaviors", {}).get("early_sacrifice", {})
     disrespect_raw = raw.get("disrespect", {})
+    time_management_raw = raw.get("time_management", {})
+    mate_clock_taunt_raw = raw.get("behaviors", {}).get("mate_clock_taunt", {})
     lichess_raw = raw.get("lichess", {})
     engine_path = os.getenv("STOCKFISH_PATH", engine_raw.get("path", ""))
     if not engine_path:
@@ -144,6 +150,20 @@ def load_config(path: str | Path) -> AppConfig:
             base_level=int(disrespect_raw.get("base_level", 15)),
             rating_points_per_level=int(disrespect_raw.get("rating_points_per_level", 10)),
             maximum_level=int(disrespect_raw.get("maximum_level", 100)),
+        ),
+        time_management=TimeManagementConfig(
+            enabled=bool(time_management_raw.get("enabled", True)),
+            reserve_seconds=float(time_management_raw.get("reserve_seconds", 0.20)),
+            minimum_think_seconds=float(time_management_raw.get("minimum_think_seconds", 0.03)),
+            maximum_think_seconds=float(time_management_raw.get("maximum_think_seconds", 0.80)),
+            clock_fraction=float(time_management_raw.get("clock_fraction", 0.012)),
+            increment_fraction=float(time_management_raw.get("increment_fraction", 0.50)),
+        ),
+        mate_clock_taunt=MateClockTauntConfig(
+            enabled=bool(mate_clock_taunt_raw.get("enabled", True)),
+            minimum_disrespect_level=int(mate_clock_taunt_raw.get("minimum_disrespect_level", 45)),
+            target_remaining_seconds=float(mate_clock_taunt_raw.get("target_remaining_seconds", 3.0)),
+            network_margin_seconds=float(mate_clock_taunt_raw.get("network_margin_seconds", 0.25)),
         ),
         lichess=LichessConfig(
             enabled=bool(lichess_raw.get("enabled", False)),
