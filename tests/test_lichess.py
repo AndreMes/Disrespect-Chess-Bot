@@ -1,7 +1,7 @@
 import requests
 
 from disrespect_bot.config import LichessConfig
-from disrespect_bot.lichess import challenge_is_allowed, game_id_from_event, retry_delay
+from disrespect_bot.lichess import challenge_is_allowed, game_id_from_event, is_bot_account, retry_delay
 
 
 CONFIG = LichessConfig(enabled=True, accept_challenges=True, allowed_challengers=("andre",), allowed_variants=("standard",), allowed_speeds=("rapid",), max_concurrent_games=1)
@@ -28,3 +28,8 @@ def test_429_waits_at_least_one_minute():
 
 def test_uses_game_id_from_start_event():
     assert game_id_from_event({"id": "not-the-game-id", "gameId": "actual123"}) == "actual123"
+
+
+def test_requires_bot_title_on_account():
+    assert is_bot_account({"title": "BOT"})
+    assert not is_bot_account({"title": None})

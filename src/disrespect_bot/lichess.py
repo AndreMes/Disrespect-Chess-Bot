@@ -38,6 +38,10 @@ def game_id_from_event(game: dict) -> str:
     return game_id
 
 
+def is_bot_account(account: dict) -> bool:
+    return account.get("title") == "BOT"
+
+
 class LichessApi:
     """Small wrapper for the official Bot API; no browser automation is used."""
 
@@ -95,6 +99,11 @@ class LichessBot:
 
     def run(self) -> None:
         account = self.api.account()
+        if not is_bot_account(account):
+            raise ValueError(
+                "The authenticated Lichess account is not a BOT account. "
+                "Upgrade a fresh, unused account before running this client."
+            )
         LOG.info("Connected as %s", account["username"])
         retry_seconds = 1
         while True:
