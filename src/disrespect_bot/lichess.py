@@ -7,6 +7,7 @@ import time
 from typing import Iterator
 
 import chess
+import chess.engine
 import chess.pgn
 import requests
 
@@ -53,6 +54,10 @@ def lichess_result(state: dict) -> str:
     if state.get("status") not in {None, "started", "created"}:
         return "1/2-1/2"
     return "*"
+
+
+def engine_retry_delay(attempt: int) -> int:
+    return min(2 ** attempt, 10)
 
 
 class LichessApi:
@@ -134,12 +139,12 @@ class LichessBot:
                         self.active_games += 1
                         try:
                             self._play_game(game_id, account["id"])
-                        except requests.HTTPError as error:
-                            response = error.response
+                        except (requests.HTTPError, chess.engine.EngineError, OSError) as error:
+                            response = getattr(error, "response", None)
                             LOG.error(
                                 "Unable to stream game %s (HTTP %s): %s",
                                 game_id,
-                                response.status_code if response is not None else "?",
+                                response.status_code if response is not None else "engine",
                                 response.text[:300] if response is not None else error,
                             )
                         finally:
@@ -160,6 +165,18 @@ class LichessBot:
             self.api.decline_challenge(challenge_id)
 
     def _play_game(self, game_id: str, account_id: str) -> None:
+        for attempt in range(3):
+            try:
+                self._play_game_once(game_id, account_id)
+                return
+            except (chess.engine.EngineError, OSError) as error:
+                if attempt == 2:
+                    raise
+                delay = engine_retry_delay(attempt)
+                LOG.warning("Stockfish failed in game %s (%s); restarting in %ss", game_id, error, delay)
+                time.sleep(delay)
+
+    def _play_game_once(self, game_id: str, account_id: str) -> None:
         board = chess.Board()
         logger = GameLogger(self.config.log_directory)
         opening_manager = OpeningManager(self.config.openings)

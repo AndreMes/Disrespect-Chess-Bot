@@ -62,3 +62,12 @@ Quando o relógio do adversário cai abaixo de 20 segundos, o bot aumenta
 progressivamente o desrespeito; aos 5 segundos, a pressão chega ao máximo e a
 janela de sacrifícios pode se estender até o 15º lance do bot. Esses limites
 ficam em `behaviors.clock_pressure` no `config.yaml`.
+
+## Histórico local
+
+Após cada partida, `logs/index.html` é atualizado automaticamente com links para
+o PGN, JSON e relatório. Para recriá-lo manualmente, execute:
+
+```powershell
+python -m disrespect_bot.reports --logs logs
+```

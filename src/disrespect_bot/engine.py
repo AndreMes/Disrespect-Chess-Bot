@@ -58,7 +58,11 @@ class StockfishAnalyzer:
         return chess.engine.Limit(time=max(0.001, remaining))
 
     def close(self) -> None:
-        self.engine.quit()
+        try:
+            self.engine.quit()
+        except (chess.engine.EngineError, OSError):
+            # The caller will restart a terminated engine on the next attempt.
+            pass
 
     def __enter__(self):
         return self

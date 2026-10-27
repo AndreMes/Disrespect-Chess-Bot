@@ -1,7 +1,7 @@
 import requests
 
 from disrespect_bot.config import LichessConfig
-from disrespect_bot.lichess import challenge_is_allowed, game_id_from_event, is_bot_account, lichess_result, retry_delay
+from disrespect_bot.lichess import challenge_is_allowed, engine_retry_delay, game_id_from_event, is_bot_account, lichess_result, retry_delay
 
 
 CONFIG = LichessConfig(enabled=True, accept_challenges=True, allowed_challengers=("andre",), allowed_variants=("standard",), allowed_speeds=("bullet", "rapid"), max_concurrent_games=1)
@@ -43,3 +43,9 @@ def test_lichess_result_uses_winner_and_draw_status():
     assert lichess_result({"status": "mate", "winner": "white"}) == "1-0"
     assert lichess_result({"status": "draw"}) == "1/2-1/2"
     assert lichess_result({"status": "started"}) == "*"
+
+
+def test_engine_restart_delay_is_bounded():
+    assert engine_retry_delay(0) == 1
+    assert engine_retry_delay(3) == 8
+    assert engine_retry_delay(8) == 10

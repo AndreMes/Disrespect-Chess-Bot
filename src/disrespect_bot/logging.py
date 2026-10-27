@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 import chess.pgn
 
+from .reports import render_history_dashboard
+
 
 class GameLogger:
     def __init__(self, directory: Path):
@@ -24,6 +26,7 @@ class GameLogger:
             print(game, file=file)
         json_path.write_text(json.dumps(self.events, ensure_ascii=False, indent=2), encoding="utf-8")
         report_path.write_text(self._report(game), encoding="utf-8")
+        render_history_dashboard(self.directory)
         return pgn_path, json_path, report_path
 
     def _report(self, game: chess.pgn.Game) -> str:
