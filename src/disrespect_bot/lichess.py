@@ -30,6 +30,14 @@ def retry_delay(error: requests.RequestException, fallback_seconds: int) -> int:
     return fallback_seconds
 
 
+def game_id_from_event(game: dict) -> str:
+    """The incoming-event contract names the streamable game identifier gameId."""
+    game_id = game.get("gameId")
+    if not game_id:
+        raise ValueError("gameStart event does not contain gameId")
+    return game_id
+
+
 class LichessApi:
     """Small wrapper for the official Bot API; no browser automation is used."""
 
@@ -97,16 +105,17 @@ class LichessBot:
                     if event_type == "challenge":
                         self._handle_challenge(event["challenge"])
                     elif event_type == "gameStart":
+                        game_id = game_id_from_event(event["game"])
                         self.active_games += 1
                         try:
-                            self._play_game(event["game"]["id"], account["id"])
+                            self._play_game(game_id, account["id"])
                         except requests.HTTPError as error:
                             response = error.response
                             LOG.error(
                                 "Unable to stream game %s (HTTP %s): %s",
-                                event["game"]["id"],
-                                response.status_code if response else "?",
-                                response.text[:300] if response else error,
+                                game_id,
+                                response.status_code if response is not None else "?",
+                                response.text[:300] if response is not None else error,
                             )
                         finally:
                             self.active_games -= 1

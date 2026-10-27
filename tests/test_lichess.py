@@ -1,7 +1,7 @@
 import requests
 
 from disrespect_bot.config import LichessConfig
-from disrespect_bot.lichess import challenge_is_allowed, retry_delay
+from disrespect_bot.lichess import challenge_is_allowed, game_id_from_event, retry_delay
 
 
 CONFIG = LichessConfig(enabled=True, accept_challenges=True, allowed_challengers=("andre",), allowed_variants=("standard",), allowed_speeds=("rapid",), max_concurrent_games=1)
@@ -24,3 +24,7 @@ def test_429_waits_at_least_one_minute():
     response.status_code = 429
     error = requests.HTTPError(response=response)
     assert retry_delay(error, 1) == 60
+
+
+def test_uses_game_id_from_start_event():
+    assert game_id_from_event({"id": "not-the-game-id", "gameId": "actual123"}) == "actual123"
