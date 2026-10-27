@@ -20,6 +20,11 @@ behaviors:
     minimum_best_evaluation: 500
     max_opponent_material: 5
     minimum_candidate_evaluation: 100
+  mate_delay:
+    enabled: true
+    minimum_disrespect_level: 45
+    max_pawn_candidates: 3
+    minimum_candidate_evaluation: 300
   early_sacrifice:
     enabled: true
     max_ply: 14

@@ -1,6 +1,13 @@
 import chess
 
-from disrespect_bot.config import DisrespectConfig, EarlySacrificeConfig, SafetyConfig, UnderpromotionConfig
+from disrespect_bot.config import (
+    DisrespectConfig,
+    EarlySacrificeConfig,
+    MateDelayConfig,
+    SafetyConfig,
+    UnderpromotionConfig,
+    WinningUnderpromotionConfig,
+)
 from disrespect_bot.decisions import DisrespectEngine
 from disrespect_bot.engine import Candidate
 
@@ -117,3 +124,24 @@ def test_winning_endgame_underpromotes_even_when_queen_has_forced_mate():
     engine = DisrespectEngine(SafetyConfig(confirmation_depth=10), UnderpromotionConfig(True, True, 50, ("knight", "bishop", "rook")))
     decision = engine.choose_move(BOARD, analyzer, 8, 3)
     assert decision.move == KNIGHT
+
+
+def test_high_disrespect_delays_forced_mate_for_a_safe_pawn_push():
+    board = chess.Board("7k/8/P7/8/8/8/8/K7 w - - 0 1")
+    mate_move = chess.Move.from_uci("a1b1")
+    pawn_push = chess.Move.from_uci("a6a7")
+    analyzer = BestMoveFakeAnalyzer({
+        mate_move: Candidate(mate_move, 99_997, 3, (1000, 0, 0)),
+        pawn_push: candidate(pawn_push, 300),
+    }, mate_move)
+    engine = DisrespectEngine(
+        SafetyConfig(confirmation_depth=10),
+        UnderpromotionConfig(False),
+        winning_underpromotion=WinningUnderpromotionConfig(False),
+        mate_delay=MateDelayConfig(True, 45, 3, 300),
+    )
+
+    decision = engine.choose_move(board, analyzer, 8, 3, bot_rating=2500, opponent_rating=2000)
+
+    assert decision.move == pawn_push
+    assert decision.event == "mate_delayed_for_pawn_promotion"

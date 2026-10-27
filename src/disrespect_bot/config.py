@@ -38,6 +38,14 @@ class WinningUnderpromotionConfig:
 
 
 @dataclass(frozen=True)
+class MateDelayConfig:
+    enabled: bool = True
+    minimum_disrespect_level: int = 45
+    max_pawn_candidates: int = 3
+    minimum_candidate_evaluation: int = 300
+
+
+@dataclass(frozen=True)
 class EarlySacrificeConfig:
     enabled: bool = True
     max_ply: int = 14
@@ -73,6 +81,7 @@ class AppConfig:
     safety: SafetyConfig
     underpromotion: UnderpromotionConfig
     winning_underpromotion: WinningUnderpromotionConfig
+    mate_delay: MateDelayConfig
     early_sacrifice: EarlySacrificeConfig
     disrespect: DisrespectConfig
     lichess: LichessConfig
@@ -88,6 +97,7 @@ def load_config(path: str | Path) -> AppConfig:
     safety_raw = raw.get("safety", {})
     underpromotion_raw = raw.get("behaviors", {}).get("underpromotion", {})
     winning_underpromotion_raw = raw.get("behaviors", {}).get("winning_underpromotion", {})
+    mate_delay_raw = raw.get("behaviors", {}).get("mate_delay", {})
     early_sacrifice_raw = raw.get("behaviors", {}).get("early_sacrifice", {})
     disrespect_raw = raw.get("disrespect", {})
     lichess_raw = raw.get("lichess", {})
@@ -113,6 +123,12 @@ def load_config(path: str | Path) -> AppConfig:
             minimum_best_evaluation=int(winning_underpromotion_raw.get("minimum_best_evaluation", 500)),
             max_opponent_material=int(winning_underpromotion_raw.get("max_opponent_material", 5)),
             minimum_candidate_evaluation=int(winning_underpromotion_raw.get("minimum_candidate_evaluation", 100)),
+        ),
+        mate_delay=MateDelayConfig(
+            enabled=bool(mate_delay_raw.get("enabled", True)),
+            minimum_disrespect_level=int(mate_delay_raw.get("minimum_disrespect_level", 45)),
+            max_pawn_candidates=int(mate_delay_raw.get("max_pawn_candidates", 3)),
+            minimum_candidate_evaluation=int(mate_delay_raw.get("minimum_candidate_evaluation", 300)),
         ),
         early_sacrifice=EarlySacrificeConfig(
             enabled=bool(early_sacrifice_raw.get("enabled", True)),

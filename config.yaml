@@ -29,6 +29,13 @@ behaviors:
     max_opponent_material: 5
     # A underpromotion precisa preservar pelo menos uma vantagem vencedora.
     minimum_candidate_evaluation: 100
+  mate_delay:
+    enabled: true
+    # Acima deste nível, mate forçado pode ser adiado para avançar peões.
+    minimum_disrespect_level: 45
+    max_pawn_candidates: 3
+    # Só abandona o mate imediato por uma posição ainda esmagadoramente ganha.
+    minimum_candidate_evaluation: 300
   early_sacrifice:
     enabled: true
     # Só procura ofertas de material até o início do sétimo lance do bot.

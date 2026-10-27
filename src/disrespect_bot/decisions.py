@@ -5,7 +5,7 @@ from typing import Protocol
 
 import chess
 
-from .config import DisrespectConfig, EarlySacrificeConfig, SafetyConfig, UnderpromotionConfig, WinningUnderpromotionConfig
+from .config import DisrespectConfig, EarlySacrificeConfig, MateDelayConfig, SafetyConfig, UnderpromotionConfig, WinningUnderpromotionConfig
 from .engine import Candidate
 
 
@@ -33,19 +33,21 @@ class DisrespectEngine:
     }
     _piece_values = {chess.KNIGHT: 3, chess.BISHOP: 3, chess.ROOK: 5, chess.QUEEN: 9}
 
-    def __init__(self, safety: SafetyConfig, underpromotion: UnderpromotionConfig, early_sacrifice: EarlySacrificeConfig | None = None, disrespect: DisrespectConfig | None = None, estimated_bot_rating: int = 2000, winning_underpromotion: WinningUnderpromotionConfig | None = None):
+    def __init__(self, safety: SafetyConfig, underpromotion: UnderpromotionConfig, early_sacrifice: EarlySacrificeConfig | None = None, disrespect: DisrespectConfig | None = None, estimated_bot_rating: int = 2000, winning_underpromotion: WinningUnderpromotionConfig | None = None, mate_delay: MateDelayConfig | None = None):
         self.safety = safety
         self.underpromotion = underpromotion
         self.early_sacrifice = early_sacrifice or EarlySacrificeConfig()
         self.disrespect = disrespect or DisrespectConfig()
         self.estimated_bot_rating = estimated_bot_rating
         self.winning_underpromotion = winning_underpromotion or WinningUnderpromotionConfig()
+        self.mate_delay = mate_delay or MateDelayConfig()
 
     def choose_move(self, board: chess.Board, analyzer: Analyzer, depth: int, multipv: int, bot_rating: int | None = None, opponent_rating: int | None = None) -> Decision:
         candidates = analyzer.candidates(board, depth, multipv)
         if not candidates:
             raise RuntimeError("Engine returned no legal candidate")
         best = candidates[0]
+        level = self.disrespect_level(bot_rating, opponent_rating)
         if self.underpromotion.enabled:
             underpromotion = self._choose_underpromotion(board, analyzer, best)
             if underpromotion is not None:
@@ -53,7 +55,9 @@ class DisrespectEngine:
         pawn_push = self._choose_pawn_first_move(board, analyzer, best)
         if pawn_push is not None:
             return Decision(pawn_push.move, "pawn_first_endgame", best, pawn_push, "pawn_first_endgame")
-        level = self.disrespect_level(bot_rating, opponent_rating)
+        delayed_mate = self._choose_mate_delay_pawn_move(board, analyzer, best, level)
+        if delayed_mate is not None:
+            return Decision(delayed_mate.move, "mate_delay", best, delayed_mate, "mate_delayed_for_pawn_promotion")
         sacrifice = self._choose_early_sacrifice(board, analyzer, best, level)
         if sacrifice is not None:
             return Decision(sacrifice.move, "early_sacrifice", best, sacrifice, "material_sacrifice")
@@ -156,6 +160,29 @@ class DisrespectEngine:
             candidate = analyzer.analyse_move(board, move, self.safety.confirmation_depth)
             if candidate.mate_in is not None and candidate.mate_in < 0:
                 continue
+            if candidate.centipawns >= config.minimum_candidate_evaluation:
+                return candidate
+        return None
+
+    def _choose_mate_delay_pawn_move(self, board: chess.Board, analyzer: Analyzer, best: Candidate, level: int) -> Candidate | None:
+        config = self.mate_delay
+        if not config.enabled or level < config.minimum_disrespect_level or best.mate_in is None or best.mate_in <= 0:
+            return None
+        pawns = [
+            move for move in board.legal_moves
+            if board.piece_at(move.from_square) and board.piece_at(move.from_square).piece_type == chess.PAWN and not move.promotion
+        ]
+        advancing = sorted(
+            pawns,
+            key=lambda move: chess.square_rank(move.to_square) if board.turn == chess.WHITE else 7 - chess.square_rank(move.to_square),
+            reverse=True,
+        )[:config.max_pawn_candidates]
+        for move in advancing:
+            candidate = analyzer.analyse_move(board, move, self.safety.confirmation_depth)
+            if candidate.mate_in is not None and candidate.mate_in < 0:
+                continue
+            if candidate.mate_in is not None and candidate.mate_in > 0:
+                return candidate
             if candidate.centipawns >= config.minimum_candidate_evaluation:
                 return candidate
         return None
